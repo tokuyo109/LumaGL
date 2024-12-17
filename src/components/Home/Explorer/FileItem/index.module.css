@@ -1,0 +1,13 @@
+.fileItem {
+  list-style: none;
+  padding-left: 0.5rem;
+
+  &:hover {
+    background-color: var(--hoverd-color);
+  }
+}
+
+.label {
+  background: none;
+  border: none;
+}

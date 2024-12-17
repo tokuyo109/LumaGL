@@ -1,0 +1,29 @@
+.directoryItem {
+  list-style: none;
+
+  ul {
+    padding-left: 0.25rem;
+  }
+
+  & > div {
+    cursor: pointer;
+    display: inline-flex;
+    vertical-align: middle;
+    gap: 0.125rem;
+    width: 100%;
+  }
+
+  & > div:hover {
+    background-color: var(--hoverd-color);
+  }
+}
+
+.iconButton {
+  background: none;
+  border: none;
+}
+
+.labelButton {
+  background: none;
+  border: none;
+}

@@ -1,0 +1,58 @@
+.menu {
+  /* 1層のメニュースタイル */
+  display: flex;
+  list-style-type: none;
+
+  & > li > div {
+    padding: 4px;
+  }
+  
+  /* 2層のメニュースタイル */
+  & > li > ul {
+    top: 100%;
+    left: 0;
+  }
+
+  /* 2層以降のメニュースタイル */
+  & > li > ul button {
+    padding: 0 1rem;
+  }
+
+  /* 共通のメニュースタイル */
+  --ul-padding: 4px;
+
+  ul {
+    list-style-type: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    
+    background-color: var(--menu-background);
+
+    position: absolute;
+    top: 0;
+    left: calc(100% + var(--ul-padding));
+    padding: var(--ul-padding);
+
+    width: max-content;
+  }
+
+  li {
+    position: relative;
+    border-radius: 4px;
+  }
+
+  div:hover {
+    background-color: var(--hoverd-color);
+  }
+
+  button {
+    background: none;
+    color: var(--text);
+    border: none;
+
+    border-radius: 4px;
+    padding: 0 4px;
+
+    cursor: pointer;
+  }
+}
