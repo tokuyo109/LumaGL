@@ -5,8 +5,6 @@ import { EntryNode, Entry } from './types';
 export const INDEXED_DB_NAME = 'entries';
 export const INDEXED_DB_STORE_NAME = 'store';
 
-let idb: IDBDatabase;
-
 /**
  * indexedDBを開く関数
  */
@@ -14,7 +12,7 @@ export const openIndexedDB = async (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(INDEXED_DB_NAME, 1);
     request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-      idb = (event.target as IDBOpenDBRequest).result;
+      const idb:IDBDatabase = (event.target as IDBOpenDBRequest).result;
       if (!idb.objectStoreNames.contains(INDEXED_DB_STORE_NAME)) {
         // オブジェクトストアの作成
         idb.createObjectStore(INDEXED_DB_STORE_NAME, { keyPath: 'path' });
@@ -23,7 +21,7 @@ export const openIndexedDB = async (): Promise<IDBDatabase> => {
 
     request.onsuccess = (event: Event) => {
       console.log('データベースに接続しました');
-      idb = (event.target as IDBOpenDBRequest).result;
+      const idb:IDBDatabase = (event.target as IDBOpenDBRequest).result;
       resolve(idb);
     }
 
@@ -131,24 +129,6 @@ export const registerEntry = async (
     });
   }
 };
-
-// /**
-//  * indexedDBを開く関数
-//  */
-// export const openIndexedDB = () => {
-//   // データベースを起動
-//   const request: IDBOpenDBRequest = indexedDB.open('entries', 1);
-//   request.onsuccess = (event: Event) => {
-//     const storeName = 'store';
-//     const db: IDBDatabase = (event.target as IDBOpenDBRequest).result;
-//     const transaction:IDBTransaction = db.transaction(storeName, 'readonly');
-//     const store:IDBObjectStore = transaction.objectStore(storeName);
-//   };
-
-//   request.onerror = (): void => {
-//     console.error('データベースの接続に失敗しました');
-//   };
-// };
 
 /**
  * ディレクトリを選択する

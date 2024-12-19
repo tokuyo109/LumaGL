@@ -46,7 +46,8 @@ const Window = () => {
       ...prev,
       [`${id}: Preview`]: (
         <iframe
-          src={blobUrl}
+          // src={blobUrl}
+          src="/entries/directory/index.html"
           style={{ width: '100%', height: '100%', border: 'none' }}
           onLoad={cleanup}
           onError={cleanup}

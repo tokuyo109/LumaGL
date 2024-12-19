@@ -5,7 +5,16 @@ import Router from './Router.tsx';
 import './reset.css';
 import './index.css';
 
-console.log('service_worker.js');
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register(`${import.meta.env.VITE_BASE_URL}/sw.js`, { scope: '/entries/' })
+    .then(() => {
+      console.log('Service Worker登録成功');
+    })
+    .catch((err) => {
+      console.error('Service Worker登録失敗', err);
+    });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
