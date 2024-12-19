@@ -1,7 +1,154 @@
 /**
- * Reactに依存しない純粋関数を記述する
+ * 汎用コードを記述する
  */
-import { EntryNode } from './types';
+import { EntryNode, Entry } from './types';
+export const INDEXED_DB_NAME = 'entries';
+export const INDEXED_DB_STORE_NAME = 'store';
+
+let idb: IDBDatabase;
+
+/**
+ * indexedDBを開く関数
+ */
+export const openIndexedDB = async (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(INDEXED_DB_NAME, 1);
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      idb = (event.target as IDBOpenDBRequest).result;
+      if (!idb.objectStoreNames.contains(INDEXED_DB_STORE_NAME)) {
+        // オブジェクトストアの作成
+        idb.createObjectStore(INDEXED_DB_STORE_NAME, { keyPath: 'path' });
+      }
+    }
+
+    request.onsuccess = (event: Event) => {
+      console.log('データベースに接続しました');
+      idb = (event.target as IDBOpenDBRequest).result;
+      resolve(idb);
+    }
+
+    request.onerror = error => {
+      console.error('データベースに接続できませんでした', error);
+      reject(error);
+    }
+  })
+}
+
+/**
+ * ディレクトリからエントリを収集する関数
+ * 
+ * @param dirHandle FileSystemDirectoryHandle
+ * @param parentPath string
+ * @returns Promise<Entry[]> 収集したエントリの配列
+ */
+export const collectEntries = async (
+  dirHandle: FileSystemDirectoryHandle,
+  parentPath = '/',
+): Promise<Entry[]> => {
+  const entries: Entry[] = [];
+
+  const dfs = async (dirHandle: FileSystemDirectoryHandle, parentPath: string) => {
+    let lastModifiedByDir: number | null = null;
+
+    for await (const [name, handle] of (dirHandle as unknown) as AsyncIterable<[string, FileSystemHandle]>) {
+      const path = `${parentPath}${name}`;
+
+      if (handle.kind === 'directory') {
+        await dfs(handle as FileSystemDirectoryHandle, `${path}/`);
+
+        const entry: Entry = {
+          path,
+          type: handle.kind,
+          parentPath,
+          handle,
+          lastModified: lastModifiedByDir,
+        };
+
+        entries.push(entry);
+      } else if (handle.kind === 'file') {
+        const file = await (handle as FileSystemFileHandle).getFile();
+        const lastModified = file.lastModified;
+
+        const entry: Entry = {
+          path,
+          type: handle.kind,
+          parentPath,
+          handle,
+          lastModified,
+        };
+
+        entries.push(entry);
+
+        lastModifiedByDir = lastModifiedByDir === null
+          ? lastModified
+          : Math.max(lastModifiedByDir, lastModified);
+      }
+    }
+  };
+
+  await dfs(dirHandle, parentPath);
+  return entries;
+};
+
+/**
+ * indexedDBにエントリーを登録する
+ * 
+ * @param dirHandle FileSystemDirectoryHandle
+ */
+export const registerEntry = async (
+  dirHandle: FileSystemDirectoryHandle,
+) => {
+  const idb = await openIndexedDB();
+  const entries = await collectEntries(dirHandle); // エントリを収集
+
+  const transaction = idb.transaction(INDEXED_DB_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(INDEXED_DB_STORE_NAME);
+
+  // 既存データをクリア
+  await new Promise<void>((resolve, reject) => {
+    const clearRequest = store.clear();
+    clearRequest.onsuccess = () => {
+      console.log('エントリーのクリアに成功しました');
+      resolve();
+    };
+    clearRequest.onerror = () => {
+      console.log('エントリーのクリアに失敗しました');
+      reject();
+    };
+  });
+
+  for (const entry of entries) {
+    await new Promise<void>((resolve, reject) => {
+      const request = store.add(entry);
+      request.onsuccess = () => {
+        console.log('エントリーの登録に成功しました');
+        resolve();
+      };
+      request.onerror = () => {
+        console.log('エントリーの登録に失敗しました');
+        reject();
+      };
+    });
+  }
+};
+
+// /**
+//  * indexedDBを開く関数
+//  */
+// export const openIndexedDB = () => {
+//   // データベースを起動
+//   const request: IDBOpenDBRequest = indexedDB.open('entries', 1);
+//   request.onsuccess = (event: Event) => {
+//     const storeName = 'store';
+//     const db: IDBDatabase = (event.target as IDBOpenDBRequest).result;
+//     const transaction:IDBTransaction = db.transaction(storeName, 'readonly');
+//     const store:IDBObjectStore = transaction.objectStore(storeName);
+//   };
+
+//   request.onerror = (): void => {
+//     console.error('データベースの接続に失敗しました');
+//   };
+// };
 
 /**
  * ディレクトリを選択する

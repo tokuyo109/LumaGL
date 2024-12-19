@@ -9,7 +9,14 @@ import {
 } from '@dnd-kit/core';
 import styles from './index.module.css';
 import { EntryNode } from './types';
-import { selectDirectory, buildTree, findNodeById, moveEntry } from './utils';
+import {
+  selectDirectory,
+  buildTree,
+  findNodeById,
+  moveEntry,
+  openIndexedDB,
+  registerEntry,
+} from './utils';
 import { FolderOpenIcon } from '@heroicons/react/24/outline';
 import { useExplorerContext } from './context';
 
@@ -26,6 +33,8 @@ const Explorer = () => {
       const newTree = await buildTree(dirHandle);
       setTree(newTree);
       setRootHandle(dirHandle);
+
+      await registerEntry(dirHandle);
     }
   };
 
