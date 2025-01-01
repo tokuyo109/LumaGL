@@ -1,0 +1,14 @@
+.contextMenuItem {
+  cursor: pointer;
+  list-style: none;
+  padding: 0 1rem;
+  border-radius: 4px;
+
+  & * {
+    cursor: pointer;
+  }
+}
+
+.contextMenuItem:hover {
+  background-color: var(--hoverd-color);
+}

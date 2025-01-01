@@ -1,0 +1,9 @@
+.icon {
+  display: inline;
+}
+
+.icon svg {
+  height: 0.75rem;
+  width: 0.75rem;
+  color: var(--secondary);
+}

@@ -1,47 +1,20 @@
-import { useEffect } from 'react';
+import { forwardRef } from 'react';
+import styles from './index.module.css';
 
-type ContextMenuProps = {
+type Props = {
   x: number;
   y: number;
-  isVisible: boolean;
-  onClose: () => void;
   children: React.ReactNode;
 };
 
-const ContextMenu = ({
-  x,
-  y,
-  isVisible,
-  onClose,
-  children,
-}: ContextMenuProps) => {
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (isVisible) onClose();
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [isVisible, onClose]);
-
-  if (!isVisible) return null;
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: `${y}px`,
-        left: `${x}px`,
-        backgroundColor: 'white',
-        border: '1px solid #ccc',
-        zIndex: 1000,
-        padding: '5px',
-      }}
-    >
-      {children}
-    </div>
-  );
-};
+const ContextMenu = forwardRef<HTMLDivElement, Props>(
+  ({ x, y, children }, ref) => {
+    return (
+      <div className={styles.contextMenu} ref={ref} style={{ top: y, left: x }}>
+        {children}
+      </div>
+    );
+  },
+);
 
 export default ContextMenu;

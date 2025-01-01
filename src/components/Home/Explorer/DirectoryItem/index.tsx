@@ -1,183 +1,142 @@
 /**
  * エクスプローラーのフォルダを表現するコンポーネント
  */
-
 import { useState } from 'react';
-import IconButton from '../../../UI/IconButton';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { useDirectoryState } from '../hook';
-import { createEntry, removeEntry, renameEntry, findNodeById } from '../utils';
 import { useExplorerContext } from '../context';
-import { EntryNode } from '../types';
-import ContextMenu from '../ContextMenu';
-import {
-  DocumentPlusIcon,
-  FolderPlusIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
-} from '@heroicons/react/24/outline';
+import { useDirectoryState } from '../hook';
+import { TreeNode } from '../types';
 import styles from './index.module.css';
+import {
+  VscChevronDown,
+  VscChevronRight,
+  VscNewFile,
+  VscNewFolder,
+} from 'react-icons/vsc';
+import { ButtonHTMLAttributes } from 'react';
+import TextInput from '../TextInput';
+
+import { createEntry, addEntryToIndexedDB } from '../utils';
 
 type Props = {
-  node: EntryNode;
+  node: TreeNode;
   children?: React.ReactNode;
 };
 
 const DirectoryItem = ({ node, children }: Props) => {
-  const { tree, refreshExplorer } = useExplorerContext();
+  const { refreshExplorer } = useExplorerContext();
 
-  const [isRenaming, setIsRenaming] = useState<boolean>(false);
-
+  // エントリーを作成中かどうか・エントリーのタイプ
   const [creatingType, setCreatingType] = useState<'directory' | 'file' | null>(
     null,
   );
 
-  const [contextMenuState, setContextMenuState] = useState<{
-    x: number;
-    y: number;
-    isVisible: boolean;
-  }>({ x: 0, y: 0, isVisible: false });
+  // ディレクトリの開閉を管理するState
+  const { openDirectories, toggleDirectory, openDirectory } =
+    useDirectoryState();
 
-  const { openDirectories, onToggleDirectory } = useDirectoryState();
-
-  const { attributes, listeners, setNodeRef } = useDraggable({
-    id: node.id,
+  // ドラッグ用プロパティ
+  const { setNodeRef, attributes, listeners, transform } = useDraggable({
+    id: node.path,
   });
+
+  const style = transform
+    ? `translate(${transform.x}px, ${transform.y}px)`
+    : undefined;
+
+  // ドロップ用プロパティ
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
-    id: node.id,
+    id: node.path,
   });
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenuState({
-      x: e.pageX,
-      y: e.pageY,
-      isVisible: true,
-    });
-  };
-
-  const handleRenaming = async (event: React.FocusEvent<HTMLInputElement>) => {
-    const entryName = event.target.value;
-    if (!entryName.trim()) {
-      setIsRenaming(false);
-      return;
-    }
-
-    const path = findNodeById(tree, node.id);
-    if (!path) return;
-
-    const source = path.slice(-1)[0];
-    const sourceParent = path.length > 1 ? path[path.length - 2] : null;
-    if (!sourceParent) return;
-
-    await renameEntry(
-      source.handle as FileSystemDirectoryHandle,
-      sourceParent.handle as FileSystemDirectoryHandle,
-      entryName,
+  const ToggleButton = () => {
+    return (
+      <button className={styles.toggleButton}>
+        {openDirectories[node.path] ? <VscChevronDown /> : <VscChevronRight />}
+      </button>
     );
-    setIsRenaming(false);
-    refreshExplorer();
   };
 
-  const handleRemoveEntry = async () => {
-    const path = findNodeById(tree, node.id);
-    if (!path) return;
+  interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    children: React.ReactNode;
+  }
 
-    const sourceParent = path.length > 1 ? path[path.length - 2] : null;
-    if (!sourceParent) return;
-
-    await removeEntry(
-      sourceParent.handle as FileSystemDirectoryHandle,
-      node.name,
+  const EntryButton: React.FC<ButtonProps> = ({ children, ...props }) => {
+    return (
+      <button className={styles.entryButton} {...props}>
+        {children}
+      </button>
     );
-    refreshExplorer();
-  };
-
-  const onCreateEntry = (event: React.FocusEvent<HTMLInputElement>) => {
-    const entryName = event.target.value;
-    if (!entryName.trim()) {
-      setCreatingType(null);
-      return;
-    }
-    createEntry(node.handle, entryName, creatingType || 'file');
-    setCreatingType(null);
-    refreshExplorer();
   };
 
   return (
     <li
-      className={styles.directoryItem}
-      key={node.id}
       ref={setDroppableRef}
       style={{
         backgroundColor: isOver ? 'lightblue' : undefined,
       }}
+      className={styles.directoryItem}
     >
       <div
+        // DnD関連
         ref={setNodeRef}
         {...listeners}
         {...attributes}
-        onContextMenu={handleContextMenu}
-        onClick={() => {
-          onToggleDirectory(node.id);
+        style={{
+          transform: style,
+          height: 'fit-content',
+        }}
+        // ディレクトリの開閉切り替え
+        onClick={(_event: React.MouseEvent) => {
+          toggleDirectory(node.path);
         }}
       >
-        <button className={styles.iconButton}>
-          {openDirectories[node.id] ? (
-            <ChevronDownIcon />
-          ) : (
-            <ChevronRightIcon />
-          )}
-        </button>
-        {isRenaming ? (
-          <input type="text" autoFocus onBlur={handleRenaming} />
-        ) : (
-          <button className={styles.labelButton}>{node.name}</button>
-        )}
-
-        <IconButton
-          label="新しいファイル"
-          onClick={() => {
+        <ToggleButton />
+        <button className={styles.label}>{node.name}</button>
+        <EntryButton
+          onClick={(event) => {
+            event.stopPropagation();
             setCreatingType('file');
+            openDirectory(node.path);
           }}
         >
-          <DocumentPlusIcon />
-        </IconButton>
-
-        <IconButton
-          label="新しいフォルダ"
-          onClick={() => {
+          <VscNewFile />
+        </EntryButton>
+        <EntryButton
+          onClick={(event) => {
+            event.stopPropagation();
             setCreatingType('directory');
+            openDirectory(node.path);
           }}
         >
-          <FolderPlusIcon />
-        </IconButton>
+          <VscNewFolder />
+        </EntryButton>
       </div>
       <ul>
         {creatingType && (
-          <input
-            type="text"
+          <TextInput
             autoFocus
-            onBlur={(event) => onCreateEntry(event)}
+            onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
+              // 空チェックと重複チェックが必要
+              const name = event.target.value;
+              const handle = await createEntry(
+                node.handle as FileSystemDirectoryHandle,
+                name,
+                creatingType,
+              );
+              if (handle) {
+                await addEntryToIndexedDB(node, handle);
+                setCreatingType(null);
+                refreshExplorer();
+              }
+            }}
             placeholder={
               creatingType === 'file' ? 'ファイル名を入力' : 'フォルダ名を入力'
             }
           />
         )}
-        {children && openDirectories[node.id] && children}
+        {openDirectories[node.path] && children}
       </ul>
-
-      <ContextMenu
-        x={contextMenuState.x}
-        y={contextMenuState.y}
-        isVisible={contextMenuState.isVisible}
-        onClose={() => setContextMenuState({ x: 0, y: 0, isVisible: false })}
-      >
-        <button onClick={() => console.log(node.handle)}>ハンドル</button>
-        <button onClick={() => setIsRenaming(true)}>名前を変更</button>
-        <button onClick={() => handleRemoveEntry()}>削除</button>
-      </ContextMenu>
     </li>
   );
 };

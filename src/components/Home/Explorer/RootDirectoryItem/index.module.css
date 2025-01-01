@@ -1,0 +1,12 @@
+.rootDirectoryItem {
+  list-style: none;
+
+  button {
+    background: none;
+    border: none;
+  }
+}
+
+.label {
+  font-weight: 700;
+}

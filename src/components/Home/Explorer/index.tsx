@@ -1,3 +1,13 @@
+import { useState, useEffect } from 'react';
+import { useExplorerContext } from './context';
+import {
+  selectDirectory,
+  registerEntry,
+  getAllFromIndexedDB,
+  buildTree,
+  moveEntry,
+} from './utils';
+import RootDirectoryItem from './RootDirectoryItem';
 import DirectoryItem from './DirectoryItem';
 import FileItem from './FileItem';
 import {
@@ -7,93 +17,101 @@ import {
   useSensors,
   MouseSensor,
 } from '@dnd-kit/core';
+import { TreeNode } from './types';
 import styles from './index.module.css';
-import { EntryNode } from './types';
-import {
-  selectDirectory,
-  buildTree,
-  findNodeById,
-  moveEntry,
-  openIndexedDB,
-  registerEntry,
-} from './utils';
-import { FolderOpenIcon } from '@heroicons/react/24/outline';
-import { useExplorerContext } from './context';
 
 const Explorer = () => {
-  const { tree, setTree, setRootHandle, refreshExplorer } =
-    useExplorerContext();
+  const { entries, setEntries, refreshExplorer } = useExplorerContext();
+
+  const [root, setRoot] = useState<TreeNode | undefined>(undefined);
+
+  // DnD
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const loadDirectory = async () => {
-    const dirHandle = await selectDirectory();
-    if (dirHandle) {
-      const newTree = await buildTree(dirHandle);
-      setTree(newTree);
-      setRootHandle(dirHandle);
+  useEffect(() => {
+    (async () => {
+      const entries = await getAllFromIndexedDB();
+      if (!entries) return;
 
-      await registerEntry(dirHandle);
-    }
+      setEntries(entries);
+    })();
+  }, []);
+
+  // entriesの更新をUIと同期する
+  useEffect(() => {
+    setRoot(buildTree(entries));
+  }, [entries]);
+
+  const handleClick = async () => {
+    const dirHandle = await selectDirectory();
+    if (!dirHandle) return;
+
+    await registerEntry(dirHandle);
+
+    const updatedEntries = await getAllFromIndexedDB();
+    if (updatedEntries) setEntries(updatedEntries);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    if (
-      event.over &&
-      typeof event.active.id === 'string' &&
-      typeof event.over.id === 'string'
-    ) {
-      // ファイル・ディレクトリまでの経路情報を取得
-      const activePath = findNodeById(tree, event.active.id);
-      const overPath = findNodeById(tree, event.over.id);
+    try {
+      const { active, over } = event;
+      if (!over) return;
+      const activeNode = entries.get(`${active.id}`);
+      const overNode = entries.get(`${over.id}`);
+      if (!(activeNode && overNode)) return;
 
-      // 経路情報が存在しない場合早期リターン
-      if (!(activePath && overPath)) return;
+      switch (activeNode.type) {
+        case 'file':
+          if (activeNode.parentPath === overNode.path) {
+            throw new Error(
+              `既にディレクトリ"${overNode.path}"に存在するため、ファイル"${activeNode.path}"の移動に失敗しました`,
+            );
+          }
+          break;
+        case 'directory':
+          if (activeNode.path === overNode.path) {
+            throw new Error(
+              `対象ディレクトリが移動先と同じため、ディレクトリ"${activeNode.path}"の移動に失敗しました`,
+            );
+          }
+          break;
+      }
 
-      const active = activePath.slice(-1)[0];
-      const over = overPath.slice(-1)[0];
-      const parent =
-        activePath.length > 1 ? activePath[activePath.length - 2] : null;
+      const parentNode = entries.get(activeNode.parentPath);
+      if (!parentNode) return;
 
-      if (!(active && over && parent)) return;
-
-      await moveEntry(
-        active.kind === 'directory'
-          ? (active.handle as FileSystemFileHandle)
-          : (active.handle as FileSystemDirectoryHandle),
-        parent.handle as FileSystemDirectoryHandle,
-        over.handle as FileSystemDirectoryHandle,
-      );
+      await moveEntry(entries, activeNode, overNode);
       refreshExplorer();
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
     }
   };
 
-  const renderTree = (node: EntryNode) => {
-    if (node.kind === 'directory') {
+  const ExplorerItem = (node: TreeNode) => {
+    if (node.type === 'directory') {
+      const DirectoryComponent =
+        node.path === '/' ? RootDirectoryItem : DirectoryItem;
+
       return (
-        <DirectoryItem key={node.id} node={node}>
-          {node.childNodes?.map(renderTree)}
-        </DirectoryItem>
+        <DirectoryComponent key={node.path} node={node}>
+          {node.children.map(ExplorerItem)}
+        </DirectoryComponent>
       );
     } else {
-      return <FileItem key={node.id} {...node} />;
+      return <FileItem key={node.path} node={node} />;
     }
   };
 
   return (
     <div className={styles.explorer}>
-      <button
-        className={styles.selectDirectory}
-        onClick={loadDirectory}
-        area-label="Select Directory"
-      >
-        <FolderOpenIcon />
-        フォルダを選択する
+      <button className={styles.selectDirectory} onClick={() => handleClick()}>
+        ディレクトリを選択
       </button>
-      {tree && (
+      {root && (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <ul>{renderTree(tree)}</ul>
+          <ul>{ExplorerItem(root)}</ul>
         </DndContext>
       )}
     </div>

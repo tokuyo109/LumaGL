@@ -1,126 +1,135 @@
 import { useState } from 'react';
-import { useDraggable } from '@dnd-kit/core';
 import { useExplorerContext } from '../context';
-import { removeEntry, renameEntry, findNodeById } from '../utils';
-import ContextMenu from '../ContextMenu';
-import { useWindowContext } from '../../Window/context';
+import { useDraggable } from '@dnd-kit/core';
+import {
+  takeExtension,
+  removeEntryFromIndexedDB,
+  removeEntry,
+  renameEntry,
+  renameEntryOfIndexedDB,
+} from '../utils';
+import { TreeNode } from '../types';
 import styles from './index.module.css';
-import Editor from '../../Editor';
+import FileIcon from '../FileIcon';
+import ContextMenu from '../ContextMenu';
+import ContextMenuItem from '../ContextMenu/ContextMenuItem';
+import ContextMenuDivider from '../ContextMenu/ContextMenuDivider';
+import ContextMenuGroup from '../ContextMenu/ContextMenuGroup';
+import { useContextMenu } from '../ContextMenu/hook';
 
-const FileItem = ({ ...node }) => {
-  const { tree, refreshExplorer } = useExplorerContext();
-  const { setMosaicState } = useWindowContext();
-  const [isRenaming, setIsRenaming] = useState<boolean>(false);
-  const [contextMenuState, setContextMenuState] = useState<{
-    x: number;
-    y: number;
-    isVisible: boolean;
-  }>({ x: 0, y: 0, isVisible: false });
-  const { setNodeRef, attributes, listeners, transform, isDragging } =
-    useDraggable({
-      id: node.id,
-    });
+type Props = {
+  node: TreeNode;
+};
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenuState({
-      x: e.pageX,
-      y: e.pageY,
-      isVisible: true,
-    });
-  };
+const FileItem = ({ node }: Props) => {
+  const { entries, refreshExplorer } = useExplorerContext();
+  const { position, contextMenuRef, showContextMenu, hideContextMenu } =
+    useContextMenu();
 
-  const handleRenaming = async (event: React.FocusEvent<HTMLInputElement>) => {
-    const entryName = event.target.value;
-    if (!entryName.trim()) {
-      setIsRenaming(false);
-      return;
-    }
+  // 名前変更中かどうか
+  const [isRenaming, setIsRenaming] = useState(false);
 
-    const path = findNodeById(tree, node.id);
-    if (!path) return;
-
-    const source = path.slice(-1)[0];
-    const sourceParent = path.length > 1 ? path[path.length - 2] : null;
-    if (!sourceParent) return;
-
-    await renameEntry(
-      source.handle as FileSystemDirectoryHandle,
-      sourceParent.handle as FileSystemDirectoryHandle,
-      entryName,
-    );
-    setIsRenaming(false);
-    refreshExplorer();
-  };
-
-  const handleRemoveEntry = async () => {
-    const path = findNodeById(tree, node.id);
-    if (!path) return;
-
-    const sourceParent = path.length > 1 ? path[path.length - 2] : null;
-    if (!sourceParent) return;
-
-    await removeEntry(
-      sourceParent.handle as FileSystemDirectoryHandle,
-      node.name,
-    );
-    refreshExplorer();
-  };
+  const { setNodeRef, attributes, listeners, transform } = useDraggable({
+    id: node.path,
+  });
 
   const style = transform
     ? `translate(${transform.x}px, ${transform.y}px)`
     : undefined;
 
-  return (
-    <li
-      key={node.id}
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      style={{
-        transform: style,
-        height: 'fit-content',
-      }}
-      className={styles.fileItem}
-      onContextMenu={handleContextMenu}
-    >
-      {isRenaming ? (
-        <input type="text" autoFocus onBlur={handleRenaming} />
-      ) : (
-        <button
-          onClick={() => {
-            // console.log(node.handle);
-            // setOpenHandles((prev) => {
-            //   return [...prev, node.handle as FileSystemFileHandle];
-            // });
-            setMosaicState((prev) => ({
-              ...prev,
-              [`${node.id}`]: (
-                <Editor handle={node.handle as FileSystemFileHandle} />
-              ),
-            }));
-          }}
-          style={{
-            backgroundColor: isDragging ? 'lightgreen' : undefined,
-          }}
-          className={styles.label}
-        >
-          {node.name}
-        </button>
-      )}
-
-      <ContextMenu
-        x={contextMenuState.x}
-        y={contextMenuState.y}
-        isVisible={contextMenuState.isVisible}
-        onClose={() => setContextMenuState({ x: 0, y: 0, isVisible: false })}
+  const LabelButton = () => {
+    return (
+      <button
+        className={styles.label}
+        onClick={() => {
+          console.log(node.handle);
+          // 後にファイルを開く処理を実装する
+        }}
       >
-        <button onClick={() => console.log(node.handle)}>ハンドル</button>
-        <button onClick={() => setIsRenaming(true)}>名前を変更</button>
-        <button onClick={() => handleRemoveEntry()}>削除</button>
-      </ContextMenu>
-    </li>
+        {node.name}
+      </button>
+    );
+  };
+
+  return (
+    <>
+      <li
+        className={styles.fileItem}
+        ref={setNodeRef}
+        {...listeners}
+        {...attributes}
+        style={{
+          transform: style,
+          height: 'fit-content',
+        }}
+      >
+        <div
+          className={styles.container}
+          onContextMenu={showContextMenu}
+          onClick={hideContextMenu}
+        >
+          {isRenaming && (
+            <input
+              type="text"
+              autoFocus
+              onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
+                const parent = entries.get(node.parentPath);
+                if (parent) {
+                  const newHandle = await renameEntry(
+                    node.handle,
+                    parent.handle as FileSystemDirectoryHandle,
+                    event.target.value,
+                  );
+                  await renameEntryOfIndexedDB(
+                    node,
+                    parent,
+                    newHandle as FileSystemFileHandle,
+                  );
+                  refreshExplorer();
+                }
+                setIsRenaming(false);
+              }}
+            />
+          )}
+          <FileIcon extension={takeExtension(node.path)} />
+          <LabelButton />
+        </div>
+      </li>
+      {position.visible && (
+        <ContextMenu x={position.x} y={position.y} ref={contextMenuRef}>
+          <ContextMenuGroup>
+            <ContextMenuItem>
+              <button
+                onClick={() => {
+                  setIsRenaming(true);
+                }}
+              >
+                名前の変更
+              </button>
+            </ContextMenuItem>
+            <ContextMenuDivider />
+            <ContextMenuItem>
+              <button
+                onClick={async () => {
+                  const parent = entries.get(node.parentPath);
+                  if (parent) {
+                    await removeEntry(
+                      parent.handle as FileSystemDirectoryHandle,
+                      node.name,
+                    );
+                    await removeEntryFromIndexedDB(node.path);
+                    refreshExplorer();
+                  }
+                  hideContextMenu();
+                }}
+              >
+                削除
+              </button>
+            </ContextMenuItem>
+          </ContextMenuGroup>
+        </ContextMenu>
+      )}
+    </>
   );
 };
 

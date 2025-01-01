@@ -1,6 +1,7 @@
 .fileItem {
   list-style: none;
-  padding-left: 0.5rem;
+  padding-left: 0.6rem;
+  border-radius: 4px;
 
   &:hover {
     background-color: var(--hoverd-color);
@@ -10,4 +11,11 @@
 .label {
   background: none;
   border: none;
+  display: flex;
+  gap: 4px;
+}
+
+.container {
+  display: flex;
+  gap: 0.25rem;
 }

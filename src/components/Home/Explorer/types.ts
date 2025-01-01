@@ -7,10 +7,14 @@ export type EntryNode = {
   childNodes?: EntryNode[];
 };
 
+export type Handle = FileSystemFileHandle | FileSystemDirectoryHandle;
+
 export type Entry = {
-  path: string;
-  type: 'directory' | 'file';
-  parentPath: string;
-  handle: FileSystemHandle;
-  lastModified: number | null;
+  path: string; // エントリーパス
+  parentPath: string; // 親エントリーパス
+  name: string; // エントリー名
+  type: 'directory' | 'file'; // エントリータイプ
+  handle: Handle;
 };
+
+export type TreeNode = Entry & { children: TreeNode[] };

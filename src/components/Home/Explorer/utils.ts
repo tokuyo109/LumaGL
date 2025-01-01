@@ -1,196 +1,338 @@
 /**
- * 汎用コードを記述する
+ * 再利用可能な汎用ロジック
+ * コンポーネントに依存しない汎用コード
  */
-import { EntryNode, Entry } from './types';
+import { Handle, Entry, TreeNode } from './types';
 export const INDEXED_DB_NAME = 'entries';
 export const INDEXED_DB_STORE_NAME = 'store';
 
+
+// 便利系
+/**
+ * FileSystem APIが対応しているか確認する関数
+ */
+// const isFileSystemSupported = (): boolean => {
+//   return 'showDirectoryPicker' in window;
+// };
+
+/**
+ * パスからパス名を取り出す
+ * 例: /directory/test.txt → test.txt
+ * 
+ * @param path
+ * @returns string
+ */
+export const takePathname = (path: string): string => {
+  const parts = path.split(/[/\\]/);
+  return parts[parts.length - 1] || '';
+};
+
+/**
+ * パスから拡張子を取り出す
+ * 
+ * @param path ファイルパス
+ * @returns string 拡張子
+ */
+export const takeExtension = (path: string): string => {
+  const parts = path.split('.');
+  return parts.length > 1 ? parts.pop() || '' : '';
+};
+
+/**
+ * パスとパスを/で繋げ、正規化する関数
+ */
+const makePath = (parentPath: string, childPath: string): string => {
+  return `${parentPath}/${childPath}`.replace(/\/+/g, '/');
+};
+
+// エクスプローラー系
+/**
+ * ユーザーが選択したディレクトリのアクセサーを返す関数
+ * https://developer.mozilla.org/ja/docs/Web/API/Window/showDirectoryPicker
+ */
+export const selectDirectory = async () => {
+  if (!('showDirectoryPicker' in window)) {
+    console.error('あなたのブラウザーはshowDirectoryPickerをサポートしていません');
+    return null;
+  }
+
+  try {
+    const dirHandle = await (window as unknown as { showDirectoryPicker: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker();
+    return dirHandle;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.log('ディレクトリの選択がキャンセルされました');
+    } else {
+      console.log('予期せぬエラーが発生しました');
+    }
+    return null;
+  }
+};
+
+/**
+ * UI表示用のツリー構造を作成する関数
+ */
+export const buildTree = (entries: Map<string, TreeNode>): TreeNode | undefined => {
+  // ルートノードを取得
+  const root = entries.get('/');
+  if (!root) return;
+
+  // ツリー構造を作成
+  entries.forEach((entry) => {
+    const parent = entries.get(entry.parentPath);
+    if (parent) {
+      parent.children.push(entry);
+    }
+  });
+
+  return root;
+};
+
+
+// IndexedDB系
+/**
+ * IndexedDBリクエストをPromiseでラップするヘルパー関数
+ */
+const handleIDBRequest = <T>(request: IDBRequest<T>): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+/**
+ * IndexedDB操作エラーをハンドリングする関数
+ */
+const handleIDBError = (operation: string, error: unknown): void => {
+  console.error(`${operation} 中にエラーが発生しました:`, error instanceof Error ? error.message : error);
+};
+
 /**
  * indexedDBを開く関数
+ * @returns {Promise<IDBDatabase>} - 接続されたIDBDatabaseのインスタンス
  */
 export const openIndexedDB = async (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(INDEXED_DB_NAME, 1);
+    const request: IDBOpenDBRequest = indexedDB.open(INDEXED_DB_NAME, 1);
+
+    // データベースのバージョン更新時に実行
     request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-      const idb:IDBDatabase = (event.target as IDBOpenDBRequest).result;
+      const idb: IDBDatabase = (event.target as IDBOpenDBRequest).result;
+      // オブジェクトストアが存在しない場合は作成する
       if (!idb.objectStoreNames.contains(INDEXED_DB_STORE_NAME)) {
-        // オブジェクトストアの作成
         idb.createObjectStore(INDEXED_DB_STORE_NAME, { keyPath: 'path' });
       }
-    }
+    };
 
+    // データベース接続成功時の処理
     request.onsuccess = (event: Event) => {
       console.log('データベースに接続しました');
       const idb:IDBDatabase = (event.target as IDBOpenDBRequest).result;
       resolve(idb);
-    }
+    };
 
-    request.onerror = error => {
-      console.error('データベースに接続できませんでした', error);
-      reject(error);
-    }
-  })
-}
+    // データベース接続失敗時の処理
+    request.onerror = (event: Event) => {
+      const error = (event.target as IDBOpenDBRequest).error;
+      console.error('データベースに接続できませんでした', error?.message || '不明なエラーです');
+      reject(error || new Error('データベース接続中に不明なエラーが発生しました'));
+    };
+  });
+};
 
 /**
- * ディレクトリからエントリを収集する関数
- * 
- * @param dirHandle FileSystemDirectoryHandle
- * @param parentPath string
- * @returns Promise<Entry[]> 収集したエントリの配列
+ * IndexedDBのトランサクションを作成する関数
  */
-export const collectEntries = async (
-  dirHandle: FileSystemDirectoryHandle,
-  parentPath = '/',
-): Promise<Entry[]> => {
+const createTransaction = (
+  idb: IDBDatabase,
+  storeName: string,
+  mode: IDBTransactionMode = 'readonly'
+): IDBObjectStore => {
+  const transaction: IDBTransaction = idb.transaction(storeName, mode);
+  return transaction.objectStore(storeName);
+};
+
+/**
+ * IndexedDBからすべてのレコードを取得する関数
+ * @returns {Promise<Map<string, TreeNode> | void>} - すべてのレコード
+ */
+export const getAllFromIndexedDB = async (): Promise<Map<
+  string,
+  TreeNode
+>> => {
+  const entries: Map<string, TreeNode> = new Map();
+  const idb: IDBDatabase = await openIndexedDB();
+  const store: IDBObjectStore = createTransaction(idb, INDEXED_DB_STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const request: IDBRequest = store.openCursor();
+
+    // リクエスト成功時の処理
+    request.onsuccess = (event: Event) => {
+      const cursor = (event.target as IDBRequest).result;
+      if (cursor) {
+        const value: Entry = cursor.value;
+        entries.set(value.path, { ...value, children: [] });
+        cursor.continue();
+      } else {
+        console.log('データの全件取得に成功しました');
+        resolve(entries);
+      }
+    };
+
+    // リクエスト失敗時の処理
+    request.onerror = (event: Event) => {
+      const error = (event.target as IDBOpenDBRequest).error;
+      console.log('データの全件取得に失敗しました', error?.message || '不明なエラーです');
+      reject(error || new Error('データの取得中に不明なエラーが発生しました'));
+    };
+  });
+};
+
+/**
+ * ディレクトリを再帰的に展開して全てのエントリを取得する関数
+ */
+export const expandDirectory = async (
+  dirHandle: FileSystemDirectoryHandle
+) => {
   const entries: Entry[] = [];
 
-  const dfs = async (dirHandle: FileSystemDirectoryHandle, parentPath: string) => {
-    let lastModifiedByDir: number | null = null;
-
-    for await (const [name, handle] of (dirHandle as unknown) as AsyncIterable<[string, FileSystemHandle]>) {
-      const path = `${parentPath}${name}`;
-
-      if (handle.kind === 'directory') {
-        await dfs(handle as FileSystemDirectoryHandle, `${path}/`);
-
+  // 深さ優先探索
+  const dfs = async (
+    dirHandle: FileSystemDirectoryHandle,
+    parentPath = ''
+  ): Promise<void> => {
+    try {
+      for await (const [name, handle] of (dirHandle as unknown) as AsyncIterable<[string, Handle]>) {
+        const path = makePath(parentPath, name);
+        if (handle.kind === 'directory') {
+          await dfs(handle, path);
+        }
         const entry: Entry = {
+          name,
           path,
-          type: handle.kind,
           parentPath,
-          handle,
-          lastModified: lastModifiedByDir,
-        };
-
-        entries.push(entry);
-      } else if (handle.kind === 'file') {
-        const file = await (handle as FileSystemFileHandle).getFile();
-        const lastModified = file.lastModified;
-
-        const entry: Entry = {
-          path,
           type: handle.kind,
-          parentPath,
-          handle,
-          lastModified,
+          handle: handle
         };
-
         entries.push(entry);
-
-        lastModifiedByDir = lastModifiedByDir === null
-          ? lastModified
-          : Math.max(lastModifiedByDir, lastModified);
       }
+    } catch (error) {
+      console.error(`${dirHandle.name}ディレクトリの探索中にエラーが発生しました:`, error);
     }
-  };
+  }
 
-  await dfs(dirHandle, parentPath);
+  // ルートディレクトリの登録
+  const entry: Entry = {
+    name: dirHandle.name,
+    path: '/',
+    parentPath: '',
+    type: 'directory',
+    handle: dirHandle
+  };
+  entries.push(entry);
+
+  // サブディレクトリの登録
+  await dfs(dirHandle, entry.path);
+
   return entries;
 };
 
 /**
- * indexedDBにエントリーを登録する
- * 
- * @param dirHandle FileSystemDirectoryHandle
+ * indexedDBにルートディレクトリを登録する
  */
 export const registerEntry = async (
   dirHandle: FileSystemDirectoryHandle,
 ) => {
-  const idb = await openIndexedDB();
-  const entries = await collectEntries(dirHandle); // エントリを収集
+  const entries: Entry[] = await expandDirectory(dirHandle); // エントリを収集
+  const idb: IDBDatabase = await openIndexedDB();
+  const store: IDBObjectStore = createTransaction(idb, INDEXED_DB_STORE_NAME, 'readwrite');
 
-  const transaction = idb.transaction(INDEXED_DB_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(INDEXED_DB_STORE_NAME);
-
-  // 既存データをクリア
-  await new Promise<void>((resolve, reject) => {
-    const clearRequest = store.clear();
-    clearRequest.onsuccess = () => {
-      console.log('エントリーのクリアに成功しました');
-      resolve();
-    };
-    clearRequest.onerror = () => {
-      console.log('エントリーのクリアに失敗しました');
-      reject();
-    };
-  });
-
-  for (const entry of entries) {
-    await new Promise<void>((resolve, reject) => {
-      const request = store.add(entry);
-      request.onsuccess = () => {
-        console.log('エントリーの登録に成功しました');
-        resolve();
-      };
-      request.onerror = () => {
-        console.log('エントリーの登録に失敗しました');
-        reject();
-      };
-    });
-  }
-};
-
-/**
- * ディレクトリを選択する
- * 
- * @returns Promise<FileSystemDirectoryHandle | undefined>
- */
-export const selectDirectory = async () => {
   try {
-    const dirHandle = (await (
-      window as any
-    ).showDirectoryPicker()) as FileSystemDirectoryHandle;
-    return dirHandle;
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      console.log('ディレクトリ選択がキャンセルされました');
-    } else {
-      console.error(error);
+    await handleIDBRequest(store.clear());
+    console.log('エントリーのクリアに成功しました');
+
+    for (const entry of entries) {
+      await handleIDBRequest(store.add(entry));
+      console.log(`エントリー${entry.name}の登録に成功しました`);
     }
+  } catch (error) {
+    console.error('エントリーの登録中にエラーが発生しました:', error);
   }
 };
 
 /**
- * 現在のディレクトリとエクスプローラーを同期させる関数
- *
- * @params dirHandle FileSystemDirectoryHandle
- * @returns EntryNode
+ * IndexedDBにエントリーを追加する関数
  */
-export const buildTree = async (dirHandle: any) => {
-  const createSubTree = async (
-    dirHandle: any,
-    parentPath = '',
-  ): Promise<any> => {
-      const nodes: EntryNode[] = [];
-      for await (const [name, handle] of dirHandle) {
-        const id = `${parentPath}/${name}`;
-        const kind = handle.kind;
-        if (kind === 'directory') {
-          const childNodes = await createSubTree(handle, id);
-          nodes.push({
-            id,
-            name,
-            kind,
-            handle,
-            childNodes,
-          });
-        } else {
-          nodes.push({ id, name, kind, handle });
-        }
-      }
+export const addEntryToIndexedDB = async (
+  parentNode: Pick<Entry, 'path'>,
+  handle: Handle,
+): Promise<void> => {
+  const entry: Entry = {
+    path: makePath(parentNode.path, handle.name),
+    parentPath: parentNode.path,
+    name: handle.name,
+    type: handle.kind,
+    handle: handle
+  };
+  
+  const idb: IDBDatabase = await openIndexedDB();
+  const store: IDBObjectStore = createTransaction(idb, INDEXED_DB_STORE_NAME, 'readwrite');
 
-      return nodes;
+  try {
+    await handleIDBRequest(store.add(entry));
+    console.log(`エントリー"${entry.name}"の作成に成功しました`);
+  } catch (error) {
+    console.error(
+      `エントリー"${entry.name}"の追加に失敗しました:`,
+      error instanceof Error ? error.message : error
+    );
+  } 
+};
+
+/**
+ * IndexedDBからエントリーを削除する
+ */
+export const removeEntryFromIndexedDB = async (path: string) => {
+  const idb: IDBDatabase = await openIndexedDB();
+  const store: IDBObjectStore = createTransaction(idb, INDEXED_DB_STORE_NAME, 'readwrite');
+  try {
+    await handleIDBRequest(store.delete(path));
+    console.log(`エントリー"${path}"の削除に成功しました`);
+  } catch (error) {
+    console.error(
+      `エントリー"${path}"の削除に失敗しました:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+};
+
+/**
+ * IndexedDBのエントリー名を更新する
+ */
+export const renameEntryOfIndexedDB = async (
+  node: Entry | TreeNode,
+  parentNode: Entry | TreeNode,
+  newHandle: Handle
+) => {
+  const idb: IDBDatabase = await openIndexedDB();
+  const store: IDBObjectStore = createTransaction(idb, INDEXED_DB_STORE_NAME, 'readwrite');
+
+  const newEntry: Entry = {
+    path: makePath(parentNode.path, newHandle.name),
+    parentPath: parentNode.path,
+    name: newHandle.name,
+    type: newHandle.kind,
+    handle: newHandle
   };
 
-  const rootNode: EntryNode = {
-    id: dirHandle.name,
-    name: dirHandle.name,
-    kind: 'directory',
-    handle: dirHandle,
-    childNodes: await createSubTree(dirHandle),
-  };
-
-  return rootNode;
+  try {
+    await handleIDBRequest(store.add(newEntry));
+    await handleIDBRequest(store.delete(node.path));
+    console.log(`エントリー"${node.path}"の名前を"${newEntry.path}"に変更しました`);
+  } catch (error) {
+    handleIDBError(`エントリー"${node.path}"の名前を変更`, error);
+  }
 };
 
 /**
@@ -200,179 +342,194 @@ export const buildTree = async (dirHandle: any) => {
  * @param id ノードのID
  * @returns EntryNode[] | null 指定ノードまでのノードの配列
  */
-export const findNodeById = (tree: EntryNode | null, id: string): EntryNode[] | null => {
-  if (!tree) return null;
+// export const findNodeById = (tree: EntryNode | null, id: string): EntryNode[] | null => {
+//   if (!tree) return null;
 
-  const dfs = (node: EntryNode, path: EntryNode[]): EntryNode[] | null => {
-    // 現在のノードをパスに追加
-    const currentPath = [...path, node];
+//   const dfs = (node: EntryNode, path: EntryNode[]): EntryNode[] | null => {
+//     // 現在のノードをパスに追加
+//     const currentPath = [...path, node];
 
-    // idが一致したら現在のパスを返す
-    if (node.id === id) {
-      return currentPath;
-    }
-    // 子ノードが存在する場合探索する
-    if (node.childNodes) {
-      for (const child of node.childNodes) {
-        const result = dfs(child, currentPath);
-        if (result) return result;
-      }
-    }
+//     // idが一致したら現在のパスを返す
+//     if (node.id === id) {
+//       return currentPath;
+//     }
+//     // 子ノードが存在する場合探索する
+//     if (node.childNodes) {
+//       for (const child of node.childNodes) {
+//         const result = dfs(child, currentPath);
+//         if (result) return result;
+//       }
+//     }
 
-    // 見つからなかったらnullを返す
-    return null;
-  };
+//     // 見つからなかったらnullを返す
+//     return null;
+//   };
 
-  // 探索開始
-  return tree ? dfs(tree, []) : null;
-};
+//   // 探索開始
+//   return tree ? dfs(tree, []) : null;
+// };
 
 /**
- * ファイル・ディレクトリを作成する。
+ * ファイル・ディレクトリを作成する関数
  * 名前が重複していれば作成し、重複していればそのエントリーを返す。
- * 
- * @param dirHandle FileDirectoryHandle ディレクトリハンドル
- * @param name string ファイル・ディレクトリ名
- * @param kind 'directory' | 'file' エントリータイプ
- * @returns Promise<FileSystemDirectoryHandle | FileSystemFileHandle>
  */
 export const createEntry = async (
-  dirHandle: any,
+  dirHandle: FileSystemDirectoryHandle,
   name: string,
   kind: 'directory' | 'file'
-) => {
-  if (kind === 'directory') {
-    return await dirHandle.getDirectoryHandle(name, { create: true });
-  } else if (kind === 'file') {
-    return await dirHandle.getFileHandle(name, { create: true });
+): Promise<Handle> => {
+  try {
+    switch (kind) {
+      case 'directory':
+        return await dirHandle.getDirectoryHandle(name, { create: true });
+      case 'file':
+        return await dirHandle.getFileHandle(name, { create: true });
+      default:
+        throw new Error(`${kind}は正しい型ではありません`);
+    }
+  } catch (error) {
+    console.error(
+      `エントリー"${name}"の作成に失敗しました:`,
+      error instanceof Error ? error.message : error
+    );
+    throw error;
   }
 };
 
 /**
- * ファイル・ディレクトリを削除する
- * 
- * @params dirHandle FileSystemDirectoryHandle
- * @params name string
+ * ファイル・ディレクトリを削除する関数
  */
-export const removeEntry = async (dirHandle: FileSystemDirectoryHandle, name: string) => {
-  await dirHandle.removeEntry(name, { recursive: true });
+export const removeEntry = async (
+  dirHandle: FileSystemDirectoryHandle,
+  name: string
+) => {
+  try {
+    await dirHandle.removeEntry(name, { recursive: true });
+  } catch (error) {
+    console.error(
+      `エントリー"${name}"の作成に失敗しました:`,
+      error instanceof Error ? error.message : error
+    );
+  }
 };
 
 /**
- * ファイル・ディレクトリの名前を変更する
- *
- * @param source FileSystemHandle 対象のハンドル
- * @param sourceParent FileSystemDirectoryHandle 親ディレクトリハンドル
- * @param newName string 新しい名前
+ * ファイル・ディレクトリの名前を変更する関数
  */
 export const renameEntry = async (
   source: FileSystemHandle,
   sourceParent: FileSystemDirectoryHandle,
   newName: string,
 ) => {
-  // 名前が同じであればなにもしない
-  if (source.name === newName) return;
+  if (source.name === newName) return; // 名前が同じであればそのまま返す
 
-  const copyFile = async (
-    source: FileSystemFileHandle,
-    sourceParent: FileSystemDirectoryHandle,
-    newName: string,
-  ) => {
-    // ファイルを読み込む
-    const file = await (source as FileSystemFileHandle).getFile();
-
-    // 新しいファイルを作成
-    const writable = await (await sourceParent.getFileHandle(newName, { create: true })).createWritable();
-    await writable.write(file);
-    await writable.close();
-  };
-
-  const copyDirectory = async (
-    source: FileSystemHandle,
-    sourceParent: FileSystemDirectoryHandle,
-    newName: string,
-  ) => {
-    // 新しいディレクトリを作成
-    const targetDir = await sourceParent.getDirectoryHandle(newName, { create: true });
-
-    for await (const [name, handle] of (source as any)) {
-      if ((handle as FileSystemHandle).kind === 'directory') {
-        copyDirectory(handle, targetDir, name);
-      } else {
-        copyFile(handle, targetDir, name);
+  const copyEntry = async (
+    handle: FileSystemHandle,
+    targetParent: FileSystemDirectoryHandle,
+    newName: string
+  ): Promise<FileSystemHandle> => {
+    if (handle.kind === 'file') {
+      // ファイルをコピー
+      const file = await (handle as FileSystemFileHandle).getFile();
+      const newHandle = await targetParent.getFileHandle(newName, { create: true });
+      const writable = await newHandle.createWritable();
+      await writable.write(file);
+      return newHandle;
+    } else if (handle.kind === 'directory') {
+      // ディレクトリをコピー
+      const newDirHandle = await targetParent.getDirectoryHandle(newName, { create: true });
+      for await (const [name, childHandle] of (handle as unknown) as AsyncIterable<[string, FileSystemHandle]>) {
+        await copyEntry(childHandle, newDirHandle, name);
       }
+      return newDirHandle;
     }
+    throw new Error(`${handle.kind}は正しい型ではありません`);
   };
 
-  if (source.kind === 'directory') {
-    await copyDirectory(source, sourceParent, newName);
-  } else if (source.kind == 'file') {
-    await copyFile(source as FileSystemFileHandle, sourceParent, newName);
+  try {
+    // 新しいエントリを作成
+    const newHandle = await copyEntry(source, sourceParent, newName);
+    
+    // 元のエントリを削除
+    await sourceParent.removeEntry(source.name, { recursive: true });
+
+    console.log(`エントリー"${source.name}"の名前を"${newName}"に変更しました`);
+    return newHandle;
+  } catch (error) {
+    console.error(
+      `エントリー"${source.name}"の名前変更に失敗しました`,
+      error instanceof Error ? error.message : error
+    );
   }
-  await sourceParent.removeEntry(source.name, { recursive: true });
 };
 
 /**
- * ファイル・ディレクトリを移動する
- * 
- * @params sourceEntry FileSystemHandle 移動元のファイル・ディレクトリ
- * @params sourceParentDir FileSystemDirectoryHandle 移動元の親ディレクトリ
- * @params targetDir FileSystemDirectoryHandle 移動先のディレクトリ
+ * ファイル・ディレクトリを移動する関数
  */
 export const moveEntry = async (
-  sourceEntry: FileSystemDirectoryHandle | FileSystemFileHandle,
-  sourceParentDir: FileSystemDirectoryHandle,
-  targetDir: FileSystemDirectoryHandle
+  entries: Map<string, TreeNode>,
+  activeNode: TreeNode,
+  overNode: TreeNode
 ) => {
-  if (sourceParentDir.name === targetDir.name) {
-    console.log('移動するファイルが移動先フォルダと同じのため、処理をスキップします。');
-    return;
-  }
+  const copyEntry = async (
+    activeNode: TreeNode,
+    overNode: TreeNode
+  ) => {
+    if (activeNode.type === 'file') {
 
-  const copyFile = async (sourceEntry: FileSystemFileHandle, targetDir: FileSystemDirectoryHandle) => {
-    const file = await sourceEntry.getFile();
-    const newFileHandle = await targetDir.getFileHandle(file.name, {
-      create: true,
-    });
-    const writable = await newFileHandle.createWritable();
-    await writable.write(await file.arrayBuffer());
-    await writable.close();
-  };
-  
-  const moveDirectory = async (sourceEntry: any, sourceParentDir: FileSystemDirectoryHandle, targetDir: FileSystemDirectoryHandle) => {
-    try {
-      const newDirHandle = await targetDir.getDirectoryHandle(sourceEntry.name, {
-        create: true,
+      // ファイルをコピー
+      const handle = activeNode.handle as FileSystemFileHandle;
+      const file = await handle.getFile();
+      
+      // 新しいファイルを作成
+      const targetDirHandle = overNode.handle as FileSystemDirectoryHandle;
+      const newHandle = await targetDirHandle.getFileHandle(handle.name, { create: true });
+
+      // ファイルを新しいファイルにペースト
+      const writable = await newHandle.createWritable();
+      await writable.write(await file.arrayBuffer());
+      await writable.close();
+
+      // 元のファイルを削除
+      const parentNode = entries.get(activeNode.parentPath);
+      if (!parentNode) return;
+      const parentDirHandle = parentNode.handle as FileSystemDirectoryHandle;
+      await parentDirHandle.removeEntry(activeNode.name, { recursive: true });
+
+      // IndexedDBに差分を反映する
+      await addEntryToIndexedDB(overNode, newHandle);
+      await removeEntryFromIndexedDB(activeNode.path);
+
+    } else if (activeNode.type === 'directory') {
+
+      // 新しいディレクトリを作成
+      const targetDirHandle = overNode.handle as FileSystemDirectoryHandle;
+      const newDirHandle = await targetDirHandle.getDirectoryHandle(activeNode.name, { create: true });
+
+      // サブディレクトリのコピー
+      activeNode.children.forEach(async (child) => {
+        const targetNode: TreeNode = {
+          path: makePath(activeNode.parentPath, activeNode.path),
+          parentPath: activeNode.parentPath,
+          name: newDirHandle.name,
+          type: 'directory',
+          handle: newDirHandle,
+          children: []
+        };
+        await copyEntry(child, targetNode);
       });
-  
-      for await (const [_name, handle] of sourceEntry) {
-        if (handle.kind === 'directory') {
-          await moveDirectory(handle, sourceEntry, newDirHandle);
-        } else if (handle.kind === 'file') {
-          await copyFile(handle, newDirHandle);
-        }
-      }
-  
-      await sourceParentDir.removeEntry(sourceEntry.name, { recursive: true });
-    } catch (error) {
-      console.error(`ディレクトリ${sourceEntry.name}の移動に失敗しました:`, error);
-      throw error;
-    }
-  };
 
-  const moveFile = async (sourceEntry: FileSystemFileHandle, sourceParentDir: FileSystemDirectoryHandle, targetDir: FileSystemDirectoryHandle) => {
-    try {
-      await copyFile(sourceEntry, targetDir);
-      await sourceParentDir.removeEntry(sourceEntry.name);
-    } catch (error) {
-      console.error(`ファイル${sourceEntry.name}の移動に失敗しました:`, error);
-      throw error;
+      // 元ディレクトリの削除
+      const parentNode = entries.get(activeNode.parentPath);
+      if (!parentNode) return;
+      const parentDirHandle = parentNode.handle as FileSystemDirectoryHandle;
+      await parentDirHandle.removeEntry(activeNode.name, { recursive: true });
+
+      // IndexedDBに差分を反映する
+      await addEntryToIndexedDB(parentNode, newDirHandle);
+      await removeEntryFromIndexedDB(activeNode.path);
     }
   }
 
-  if (sourceEntry.kind === 'directory') {
-    await moveDirectory(sourceEntry, sourceParentDir, targetDir);
-  } else if (sourceEntry.kind === 'file') {
-    await moveFile(sourceEntry, sourceParentDir, targetDir);
-  }
-}
+  await copyEntry(activeNode, overNode);
+};

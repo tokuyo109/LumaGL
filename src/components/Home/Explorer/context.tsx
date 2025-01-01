@@ -1,16 +1,16 @@
-import { createContext, useContext, useState } from 'react';
-import { EntryNode } from './types';
-import { buildTree } from './utils';
+// アプリケーション全体で共有する必要があるロジックや状態を実装する
+import { useState, createContext, useContext } from 'react';
+import { getAllFromIndexedDB } from './utils';
+import { TreeNode } from './types';
 
 type ExplorerProps = {
   children?: React.ReactNode;
 };
 
+// プロバイダーが提供するロジック・状態
 type ExplorerContextType = {
-  tree: EntryNode | null;
-  setTree: (tree: EntryNode | null) => void;
-  rootHandle: FileSystemDirectoryHandle | null;
-  setRootHandle: (handle: FileSystemDirectoryHandle | null) => void;
+  entries: Map<string, TreeNode>;
+  setEntries: (value: Map<string, TreeNode>) => void;
   refreshExplorer: () => void;
 };
 
@@ -18,30 +18,31 @@ const ExplorerContext = createContext<ExplorerContextType | undefined>(
   undefined,
 );
 
+/**
+ * Providerに渡されたvalueの値を返す
+ */
+export const useExplorerContext = (): ExplorerContextType => {
+  const context = useContext(ExplorerContext);
+  if (!context) throw new Error('コンテキストが存在しません');
+  return context;
+};
+
+/**
+ * プロバイダーコンポーネント
+ * これより下に存在するコンポーネントはこのコンテキストの値を利用することができる
+ */
 export const ExplorerProvider = ({ children }: ExplorerProps) => {
-  const [tree, setTree] = useState<EntryNode | null>(null);
-  const [rootHandle, setRootHandle] =
-    useState<FileSystemDirectoryHandle | null>(null);
+  // ファイル・ディレクトリの一覧
+  const [entries, setEntries] = useState<Map<string, TreeNode>>(new Map());
 
   const refreshExplorer = async () => {
-    if (!rootHandle) return;
-    const newTree = await buildTree(rootHandle);
-    setTree(newTree);
+    const result = await getAllFromIndexedDB();
+    setEntries(result);
   };
 
   return (
-    <ExplorerContext.Provider
-      value={{ tree, setTree, rootHandle, setRootHandle, refreshExplorer }}
-    >
+    <ExplorerContext.Provider value={{ entries, setEntries, refreshExplorer }}>
       {children}
     </ExplorerContext.Provider>
   );
-};
-
-export const useExplorerContext = (): ExplorerContextType => {
-  const context = useContext(ExplorerContext);
-  if (!context) {
-    throw new Error('コンテキストが存在しません');
-  }
-  return context;
 };
