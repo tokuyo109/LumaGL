@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import Menu from '../../components/Home/Menu';
 import Explorer from '../../components/Home/Explorer';
+import Window from '../../components/Home/Window';
 import styles from './index.module.css';
 import { useEffect } from 'react';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
@@ -47,7 +48,9 @@ const Home = () => {
                 <Explorer />
               </div>
             </aside>
-            <section className={styles.window}></section>
+            <section className={styles.window}>
+              <Window />
+            </section>
           </main>
         </ExplorerProvider>
       </WindowProvider>

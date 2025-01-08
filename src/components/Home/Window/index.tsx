@@ -1,107 +1,80 @@
-import { Mosaic, MosaicNode, MosaicWindow } from 'react-mosaic-component';
-import { useExplorerContext } from '../Explorer/context';
-import { useWindowContext } from './context';
-import { PlayIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import IconButton from '../../UI/IconButton';
+import { useState, useEffect } from 'react';
+
+import { Mosaic, MosaicWindow, type MosaicNode } from 'react-mosaic-component';
 import 'react-mosaic-component/react-mosaic-component.css';
-import { findNodeById } from '../Explorer/utils';
+
+import { useWindowContext } from './context';
+import styles from './index.module.css';
+
+/** タイルを展開する関数 */
+const expandTiles = (layout: MosaicNode<string> | null): string[] => {
+  if (!layout) return [];
+  if (typeof layout === 'string') return [layout];
+  return [...expandTiles(layout.first), ...expandTiles(layout.second)];
+};
+
+/** 削除されたタイルを検出する関数 */
+const detectRemovedTiles = (
+  oldLayout: MosaicNode<string> | null,
+  newLayout: MosaicNode<string> | null,
+): string[] => {
+  const oldTiles = expandTiles(oldLayout);
+  const newTiles = expandTiles(newLayout);
+  return oldTiles.filter((tile) => !newTiles.includes(tile));
+};
+
+/** 指定したPathのタイルが既に存在するかを返す関数 */
+const containsPath = (
+  node: MosaicNode<string> | null,
+  path: string,
+): boolean => {
+  if (!node) return false;
+  if (typeof node === 'string') return node === path;
+  return containsPath(node.first, path) || containsPath(node.second, path);
+};
 
 const Window = () => {
-  const { tree } = useExplorerContext();
-  const { mosaicState, setMosaicState } = useWindowContext();
+  const { windows, setWindows } = useWindowContext();
+  const [layout, setLayout] = useState<MosaicNode<string> | null>(null);
 
-  const initialLayout: MosaicNode<string> | null = Object.keys(
-    mosaicState,
-  ).reduce<MosaicNode<string> | null>((prev, curr) => {
-    if (!prev) return curr;
-    return {
-      direction: 'row',
-      first: prev,
-      second: curr,
-      splitPercentage: 50,
-    };
-  }, null);
-
-  const handlePreview = async (id: string) => {
-    const path = findNodeById(tree, id);
-    const node = path?.slice(-1)[0];
-    if (!node) return;
-
-    const handle = node.handle as FileSystemFileHandle;
-    const file = await handle.getFile();
-    const html = await file.text();
-
-    // baseタグを挿入することでBlobでも相対パスでリクエストが使える
-    const baseUrl = import.meta.env.VITE_BASE_URL;
-    const baseTag = `<base href="${baseUrl}">`;
-    const modifiedHTML = html.replace(/<head>/i, `<head>${baseTag}`);
-
-    const blob = new Blob([modifiedHTML], { type: 'text/html' });
-    const blobUrl = URL.createObjectURL(blob);
-
-    // Blob URLの開放
-    const cleanup = () => URL.revokeObjectURL(blobUrl);
-
-    setMosaicState((prev) => ({
-      ...prev,
-      [`${id}: Preview`]: (
-        <iframe
-          // src={blobUrl}
-          src="/entries/directory/index.html"
-          style={{ width: '100%', height: '100%', border: 'none' }}
-          onLoad={cleanup}
-          onError={cleanup}
-        ></iframe>
-      ),
-    }));
-  };
-
-  const handleRemoveTile = (id: string) => {
-    setMosaicState((prev) => {
-      const newState = { ...prev };
-      delete newState[id];
-      return newState;
+  const handleRelease = (newLayout: MosaicNode<string> | null) => {
+    const removedTiles = detectRemovedTiles(layout, newLayout);
+    const newWindows = new Map(windows);
+    removedTiles.forEach((tile) => {
+      if (newWindows.has(tile)) {
+        newWindows.delete(tile);
+      }
     });
+
+    setWindows(newWindows);
+    setLayout(newLayout);
   };
+
+  useEffect(() => {
+    const keys = Array.from(windows.keys());
+    if (!keys.length) return;
+
+    const lastKey = keys[keys.length - 1];
+
+    if (containsPath(layout, lastKey)) return;
+
+    const newLayout: MosaicNode<string> = layout
+      ? { direction: 'row', first: layout, second: lastKey }
+      : lastKey;
+
+    setLayout(newLayout);
+  }, [windows]);
 
   return (
-    <Mosaic<string>
-      renderTile={(id, path) => {
-        const toolbarControls = [
-          <IconButton
-            key="delete"
-            label="タイルの削除"
-            onClick={() => handleRemoveTile(id)}
-          >
-            <XMarkIcon />
-          </IconButton>,
-        ];
-
-        if (id.endsWith('.html')) {
-          toolbarControls.push(
-            <IconButton
-              key="preview"
-              label="プレビュー"
-              onClick={() => handlePreview(id)}
-            >
-              <PlayIcon />
-            </IconButton>,
-          );
-        }
-
-        return (
-          <MosaicWindow<string>
-            title={id}
-            path={path}
-            key={id}
-            toolbarControls={toolbarControls}
-          >
-            {mosaicState[id]}
-          </MosaicWindow>
-        );
-      }}
-      initialValue={initialLayout}
-    />
+    <div className={styles.window}>
+      <Mosaic<string>
+        renderTile={(id, path) => {
+          return <MosaicWindow<string> title={id} path={path} key={id} />;
+        }}
+        initialValue={layout}
+        onRelease={handleRelease}
+      />
+    </div>
   );
 };
 

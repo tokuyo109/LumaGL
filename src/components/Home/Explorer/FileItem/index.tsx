@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useExplorerContext } from '../context';
+import { useWindowContext } from '../../Window/context';
 import { useDraggable } from '@dnd-kit/core';
 import {
   takeExtension,
@@ -22,6 +23,7 @@ type Props = {
 };
 
 const FileItem = ({ node }: Props) => {
+  const { setWindows } = useWindowContext();
   const { entries, refreshExplorer } = useExplorerContext();
   const { position, contextMenuRef, showContextMenu, hideContextMenu } =
     useContextMenu();
@@ -42,7 +44,9 @@ const FileItem = ({ node }: Props) => {
       <button
         className={styles.label}
         onClick={() => {
-          console.log(node.handle);
+          setWindows((prev) => {
+            return new Map(prev).set(node.path, <div>{node.path}</div>);
+          });
           // 後にファイルを開く処理を実装する
         }}
       >
