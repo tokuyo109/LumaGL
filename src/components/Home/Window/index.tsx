@@ -3,6 +3,11 @@ import { useState, useEffect } from 'react';
 import { Mosaic, MosaicWindow, type MosaicNode } from 'react-mosaic-component';
 import 'react-mosaic-component/react-mosaic-component.css';
 
+import { VscChromeClose } from 'react-icons/vsc';
+
+import { takeExtension, takePathname } from '../Explorer/utils';
+import FileIcon from '../Explorer/FileIcon';
+import IconButton from '../../UI/IconButton';
 import { useWindowContext } from './context';
 import styles from './index.module.css';
 
@@ -49,6 +54,28 @@ const Window = () => {
     setLayout(newLayout);
   };
 
+  const handleRemoveTile = (id: string) => {
+    const updateWindows = new Map(windows);
+    updateWindows.delete(id);
+    setWindows(updateWindows);
+
+    setLayout((prevLayout) => {
+      // 削除対象のIDを除外した新しいレイアウトを返す
+      const removeTileFromLayout = (
+        node: MosaicNode<string> | null,
+      ): MosaicNode<string> | null => {
+        if (!node) return null;
+        if (typeof node === 'string') return node === id ? null : node;
+        const first = removeTileFromLayout(node.first);
+        const second = removeTileFromLayout(node.second);
+        if (!first && !second) return null;
+        return first && second ? { ...node, first, second } : first || second;
+      };
+
+      return removeTileFromLayout(prevLayout);
+    });
+  };
+
   useEffect(() => {
     if (windows.size === 0) return;
     const windowKeys = Array.from(windows.keys());
@@ -63,13 +90,40 @@ const Window = () => {
     }
   }, [windows, layout]);
 
-  const renderZeroState = () => <p>何も選択されていません</p>;
+  const renderZeroState = () => (
+    <div className={styles.zeroState}>何も選択されていません</div>
+  );
 
   return (
     <div className={styles.window}>
       <Mosaic<string>
+        className={styles.mosaicContainer}
         renderTile={(id, path) => {
-          return <MosaicWindow<string> title={id} path={path} key={id} />;
+          return (
+            <MosaicWindow<string>
+              className={styles.mosaicWindow}
+              title={takePathname(id)}
+              path={path}
+              key={id}
+              renderToolbar={(props) => (
+                <div className={styles.toolbar}>
+                  <div className={styles.toolbarTitle}>
+                    <FileIcon extension={takeExtension(id)} />
+                    {props.title}
+                  </div>
+                  <IconButton
+                    key="delete"
+                    label="パネルの削除"
+                    onClick={() => handleRemoveTile(id)}
+                  >
+                    <VscChromeClose />
+                  </IconButton>
+                </div>
+              )}
+            >
+              {windows.get(id)}
+            </MosaicWindow>
+          );
         }}
         initialValue={layout}
         onRelease={handleRelease}
