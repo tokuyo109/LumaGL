@@ -27,6 +27,7 @@ const FileItem = ({ node }: Props) => {
   const { entries, refreshExplorer } = useExplorerContext();
   const { position, contextMenuRef, showContextMenu, hideContextMenu } =
     useContextMenu();
+  const extension = takeExtension(node.path);
 
   // 名前変更中かどうか
   const [isRenaming, setIsRenaming] = useState(false);
@@ -40,19 +41,7 @@ const FileItem = ({ node }: Props) => {
     : undefined;
 
   const LabelButton = () => {
-    return (
-      <button
-        className={styles.label}
-        onClick={() => {
-          setWindows((prev) => {
-            return new Map(prev).set(node.path, <div>{node.path}</div>);
-          });
-          // 後にファイルを開く処理を実装する
-        }}
-      >
-        {node.name}
-      </button>
-    );
+    return <button className={styles.label}>{node.name}</button>;
   };
 
   return (
@@ -70,7 +59,27 @@ const FileItem = ({ node }: Props) => {
         <div
           className={styles.container}
           onContextMenu={showContextMenu}
-          onClick={hideContextMenu}
+          onClick={async () => {
+            switch (extension) {
+              case 'png':
+                setWindows((prev) => {
+                  const url = `/entries${node.path}`;
+                  return new Map(prev).set(
+                    node.path,
+                    <img src={url} alt={node.name} />,
+                  );
+                });
+                break;
+              default:
+                console.log('テキストです');
+              // setWindows((prev) => {
+              //   return new Map(prev).set(
+              //     node.path,
+              //     // <p></p>
+              //   )
+              // })
+            }
+          }}
         >
           {isRenaming && (
             <input
@@ -95,7 +104,7 @@ const FileItem = ({ node }: Props) => {
               }}
             />
           )}
-          <FileIcon extension={takeExtension(node.path)} />
+          <FileIcon extension={extension} />
           <LabelButton />
         </div>
       </li>

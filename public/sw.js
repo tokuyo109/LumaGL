@@ -9,8 +9,8 @@ const openIndexedDB = async () => {
     const request = indexedDB.open(INDEXED_DB_NAME, 1);
     request.onupgradeneeded = (event) => {
       const idb = event.target.result;
+      // ストアが存在しない場合作成する
       if (!idb.objectStoreNames.contains(INDEXED_DB_STORE_NAME)) {
-        // オブジェクトストアの作成
         idb.createObjectStore(INDEXED_DB_STORE_NAME, { keyPath: 'path' });
       }
     }
@@ -58,7 +58,6 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-
   if (url.pathname.startsWith('/entries/')) {
     const relativePath = `/${url.pathname.replace('/entries/', '')}`;
 
@@ -66,7 +65,6 @@ self.addEventListener('fetch', (event) => {
       try {
         const handle = await getHandleByPath(relativePath);
         if (!handle) {
-          // ファイルが存在しない場合は通常のリクエストを実行
           return fetch(event.request);
         }
 
@@ -76,7 +74,6 @@ self.addEventListener('fetch', (event) => {
         });
       } catch (error) {
         console.error('ファイル取得エラー:', error);
-        // エラーが発生した場合は通常のリクエストを実行
         return fetch(event.request);
       }
     })());

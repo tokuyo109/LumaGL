@@ -7,7 +7,7 @@ import './index.css';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register(`${import.meta.env.VITE_BASE_URL}/sw.js`, { scope: '/entries/' })
+    .register('/sw.js')
     .then(() => {
       console.log('Service Worker登録成功');
     })
