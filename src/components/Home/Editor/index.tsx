@@ -39,6 +39,7 @@ const Editor = ({ handle }: Props) => {
       const editor = monaco.editor.create(ref.current, {
         value: content,
         language,
+        automaticLayout: true,
       });
 
       editor.onDidChangeModelContent(async () => {
