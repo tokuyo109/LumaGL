@@ -12,6 +12,7 @@ import {
 import { TreeNode } from '../types';
 import styles from './index.module.css';
 import FileIcon from '../FileIcon';
+import Editor from '../../Editor';
 import ContextMenu from '../ContextMenu';
 import ContextMenuItem from '../ContextMenu/ContextMenuItem';
 import ContextMenuDivider from '../ContextMenu/ContextMenuDivider';
@@ -60,10 +61,10 @@ const FileItem = ({ node }: Props) => {
           className={styles.container}
           onContextMenu={showContextMenu}
           onClick={async () => {
+            const url = `/entries${node.path}`;
             switch (extension) {
               case 'png':
                 setWindows((prev) => {
-                  const url = `/entries${node.path}`;
                   return new Map(prev).set(
                     node.path,
                     <img src={url} alt={node.name} />,
@@ -72,12 +73,12 @@ const FileItem = ({ node }: Props) => {
                 break;
               default:
                 console.log('テキストです');
-              // setWindows((prev) => {
-              //   return new Map(prev).set(
-              //     node.path,
-              //     // <p></p>
-              //   )
-              // })
+                setWindows((prev) => {
+                  return new Map(prev).set(
+                    node.path,
+                    <Editor handle={node.handle as FileSystemFileHandle} />,
+                  );
+                });
             }
           }}
         >
