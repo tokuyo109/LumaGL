@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { Mosaic, MosaicWindow, type MosaicNode } from 'react-mosaic-component';
 import 'react-mosaic-component/react-mosaic-component.css';
 
-import { VscChromeClose } from 'react-icons/vsc';
+import { VscChromeClose, VscPlay } from 'react-icons/vsc';
 
 import { takeExtension, takePathname } from '../Explorer/utils';
 import FileIcon from '../Explorer/FileIcon';
 import IconButton from '../../UI/IconButton';
+import Preview from '../Preview';
 import { useWindowContext } from './context';
 import styles from './index.module.css';
 
@@ -105,21 +106,42 @@ const Window = () => {
               title={takePathname(id)}
               path={path}
               key={id}
-              renderToolbar={(props) => (
-                <div className={styles.toolbar}>
-                  <div className={styles.toolbarTitle}>
-                    <FileIcon extension={takeExtension(id)} />
-                    {props.title}
+              renderToolbar={(props) => {
+                const extension = takeExtension(id);
+                return (
+                  <div className={styles.toolbar}>
+                    <div className={styles.toolbarTitle}>
+                      <FileIcon extension={extension} />
+                      {props.title}
+                    </div>
+                    <div className={styles.toolbarButton}>
+                      {extension === 'html' && (
+                        <IconButton
+                          key="preview"
+                          label="パネルのプレビュー"
+                          onClick={() => {
+                            setWindows((prev) => {
+                              return new Map(prev).set(
+                                id + ':preview',
+                                <Preview path={id} />,
+                              );
+                            });
+                          }}
+                        >
+                          <VscPlay />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        key="delete"
+                        label="パネルの削除"
+                        onClick={() => handleRemoveTile(id)}
+                      >
+                        <VscChromeClose />
+                      </IconButton>
+                    </div>
                   </div>
-                  <IconButton
-                    key="delete"
-                    label="パネルの削除"
-                    onClick={() => handleRemoveTile(id)}
-                  >
-                    <VscChromeClose />
-                  </IconButton>
-                </div>
-              )}
+                );
+              }}
             >
               {windows.get(id)}
             </MosaicWindow>
