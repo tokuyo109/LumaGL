@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as monaco from 'monaco-editor';
+import { emmetHTML } from 'emmet-monaco-es';
 import './monacoWorker';
 import { takeExtension } from '../Explorer/utils';
 import styles from './index.module.css';
@@ -41,6 +42,7 @@ const Editor = ({ handle }: Props) => {
         language,
         automaticLayout: true,
       });
+      emmetHTML(monaco, [extension]);
 
       editor.onDidChangeModelContent(async () => {
         const writable = await handle.createWritable();
