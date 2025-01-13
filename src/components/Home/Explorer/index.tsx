@@ -20,6 +20,19 @@ import {
 import { TreeNode } from './types';
 import styles from './index.module.css';
 
+const sortEntries = (entries: Map<string, TreeNode>): Map<string, TreeNode> => {
+  const sortedArray = Array.from(entries.entries()).sort(
+    ([_keyA, a], [_keyB, b]) => {
+      if (a.type === 'directory' && b.type === 'file') return -1;
+      if (a.type === 'file' && b.type === 'directory') return 1;
+
+      return a.name.localeCompare(b.name);
+    },
+  );
+
+  return new Map(sortedArray);
+};
+
 const Explorer = () => {
   const { entries, setEntries, refreshExplorer } = useExplorerContext();
 
@@ -41,7 +54,8 @@ const Explorer = () => {
 
   // entriesの更新をUIと同期する
   useEffect(() => {
-    setRoot(buildTree(entries));
+    const sortedEntries = sortEntries(entries);
+    setRoot(buildTree(sortedEntries));
   }, [entries]);
 
   const handleClick = async () => {
