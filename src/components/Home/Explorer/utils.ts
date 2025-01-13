@@ -434,6 +434,7 @@ export const renameEntry = async (
       const newHandle = await targetParent.getFileHandle(newName, { create: true });
       const writable = await newHandle.createWritable();
       await writable.write(file);
+      await writable.close();
       return newHandle;
     } else if (handle.kind === 'directory') {
       // ディレクトリをコピー

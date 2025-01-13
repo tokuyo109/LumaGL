@@ -15,8 +15,20 @@ import {
 } from 'react-icons/vsc';
 import { ButtonHTMLAttributes } from 'react';
 import TextInput from '../TextInput';
+import ContextMenu from '../ContextMenu';
+import ContextMenuItem from '../ContextMenu/ContextMenuItem';
+import ContextMenuDivider from '../ContextMenu/ContextMenuDivider';
+import ContextMenuGroup from '../ContextMenu/ContextMenuGroup';
+import { useContextMenu } from '../ContextMenu/hook';
 
-import { createEntry, addEntryToIndexedDB } from '../utils';
+import {
+  createEntry,
+  addEntryToIndexedDB,
+  removeEntry,
+  removeEntryFromIndexedDB,
+  renameEntry,
+  renameEntryOfIndexedDB,
+} from '../utils';
 
 type Props = {
   node: TreeNode;
@@ -24,12 +36,16 @@ type Props = {
 };
 
 const DirectoryItem = ({ node, children }: Props) => {
-  const { refreshExplorer } = useExplorerContext();
+  const { entries, refreshExplorer } = useExplorerContext();
+  const { position, contextMenuRef, showContextMenu, hideContextMenu } =
+    useContextMenu();
 
   // エントリーを作成中かどうか・エントリーのタイプ
   const [creatingType, setCreatingType] = useState<'directory' | 'file' | null>(
     null,
   );
+
+  const [isRenaming, setIsRenaming] = useState(false);
 
   // ディレクトリの開閉を管理するState
   const { openDirectories, toggleDirectory, openDirectory } =
@@ -70,74 +86,135 @@ const DirectoryItem = ({ node, children }: Props) => {
   };
 
   return (
-    <li
-      ref={setDroppableRef}
-      style={{
-        backgroundColor: isOver ? 'lightblue' : undefined,
-      }}
-      className={styles.directoryItem}
-    >
-      <div
-        // DnD関連
-        ref={setNodeRef}
-        {...listeners}
-        {...attributes}
+    <>
+      <li
+        ref={setDroppableRef}
         style={{
-          transform: style,
-          height: 'fit-content',
+          backgroundColor: isOver ? 'lightblue' : undefined,
         }}
-        // ディレクトリの開閉切り替え
-        onClick={(_event: React.MouseEvent) => {
-          toggleDirectory(node.path);
-        }}
+        className={styles.directoryItem}
       >
-        <ToggleButton />
-        <button className={styles.label}>{node.name}</button>
-        <EntryButton
-          onClick={(event) => {
-            event.stopPropagation();
-            setCreatingType('file');
-            openDirectory(node.path);
+        <div
+          // DnD関連
+          ref={setNodeRef}
+          {...listeners}
+          {...attributes}
+          style={{
+            transform: style,
+            height: 'fit-content',
           }}
-        >
-          <VscNewFile />
-        </EntryButton>
-        <EntryButton
-          onClick={(event) => {
-            event.stopPropagation();
-            setCreatingType('directory');
-            openDirectory(node.path);
+          onClick={(_event: React.MouseEvent) => {
+            toggleDirectory(node.path);
           }}
+          onContextMenu={showContextMenu}
         >
-          <VscNewFolder />
-        </EntryButton>
-      </div>
-      <ul>
-        {creatingType && (
-          <TextInput
-            autoFocus
-            onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
-              // 空チェックと重複チェックが必要
-              const name = event.target.value;
-              const handle = await createEntry(
-                node.handle as FileSystemDirectoryHandle,
-                name,
-                creatingType,
-              );
-              if (handle) {
-                await addEntryToIndexedDB(node, handle);
-                setCreatingType(null);
-                refreshExplorer();
-              }
+          {isRenaming && (
+            <input
+              type="text"
+              autoFocus
+              onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
+                const parent = entries.get(node.parentPath);
+                if (parent) {
+                  const newHandle = await renameEntry(
+                    node.handle,
+                    parent.handle as FileSystemDirectoryHandle,
+                    event.target.value,
+                  );
+                  await renameEntryOfIndexedDB(
+                    node,
+                    parent,
+                    newHandle as FileSystemFileHandle,
+                  );
+                  refreshExplorer();
+                }
+                setIsRenaming(false);
+              }}
+            />
+          )}
+          <ToggleButton />
+          <button className={styles.label}>{node.name}</button>
+          <EntryButton
+            onClick={(event) => {
+              event.stopPropagation();
+              setCreatingType('file');
+              openDirectory(node.path);
             }}
-            placeholder={
-              creatingType === 'file' ? 'ファイル名を入力' : 'フォルダ名を入力'
-            }
-          />
-        )}
-        {openDirectories[node.path] && children}
-      </ul>
-    </li>
+          >
+            <VscNewFile />
+          </EntryButton>
+          <EntryButton
+            onClick={(event) => {
+              event.stopPropagation();
+              setCreatingType('directory');
+              openDirectory(node.path);
+            }}
+          >
+            <VscNewFolder />
+          </EntryButton>
+        </div>
+        <ul>
+          {creatingType && (
+            <TextInput
+              autoFocus
+              onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
+                // 空チェックと重複チェックが必要
+                const name = event.target.value;
+                const handle = await createEntry(
+                  node.handle as FileSystemDirectoryHandle,
+                  name,
+                  creatingType,
+                );
+                if (handle) {
+                  await addEntryToIndexedDB(node, handle);
+                  setCreatingType(null);
+                  refreshExplorer();
+                }
+              }}
+              placeholder={
+                creatingType === 'file'
+                  ? 'ファイル名を入力'
+                  : 'フォルダ名を入力'
+              }
+            />
+          )}
+          {openDirectories[node.path] && children}
+        </ul>
+      </li>
+      {position.visible && (
+        <ContextMenu x={position.x} y={position.y} ref={contextMenuRef}>
+          <ContextMenuGroup>
+            <ContextMenuItem>
+              <button
+                onClick={() => {
+                  setIsRenaming(true);
+                }}
+              >
+                名前の変更
+              </button>
+            </ContextMenuItem>
+            <ContextMenuDivider />
+            <ContextMenuItem>
+              <button
+                onClick={async () => {
+                  const parent = entries.get(node.parentPath);
+                  if (parent) {
+                    await removeEntry(
+                      parent.handle as FileSystemDirectoryHandle,
+                      node.name,
+                    );
+                    await removeEntryFromIndexedDB(node.path);
+                    refreshExplorer();
+                  }
+                  hideContextMenu();
+                }}
+              >
+                削除
+              </button>
+            </ContextMenuItem>
+          </ContextMenuGroup>
+        </ContextMenu>
+      )}
+    </>
   );
 };
 
