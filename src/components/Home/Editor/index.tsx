@@ -2,13 +2,13 @@ import { useEffect, useRef } from 'react';
 import * as monaco from 'monaco-editor';
 import { emmetHTML } from 'emmet-monaco-es';
 import './monacoWorker';
-// import { useExplorerContext } from '../Explorer/context';
 import Preview from '../Preview';
 import { useWindowContext } from '../Window/context';
 import { takeExtension } from '../Explorer/utils';
 import styles from './index.module.css';
 import { Entry } from '../Explorer/types';
 
+/** 拡張子に対応した言語を返す関数 */
 const getLanguage = (extension: string): string => {
   const languageMap: Record<string, string> = {
     js: 'javascript',
@@ -17,9 +17,32 @@ const getLanguage = (extension: string): string => {
     tsx: 'typescript',
     html: 'html',
     css: 'css',
+    frag: 'glsl',
+    glsl: 'glsl',
   };
 
   return languageMap[extension.toLowerCase()] || 'plaintext';
+};
+
+/** GLSL言語のシンタックスハイライトを登録する関数 */
+const registerGLSL = () => {
+  monaco.languages.register({
+    id: 'glsl',
+  });
+
+  monaco.languages.setMonarchTokensProvider('glsl', {
+    tokenizer: {
+      root: [
+        [
+          /\b(attribute|const|uniform|varying|break|continue|if|else|in|out|inout|void|bool|int|float|true|false|vec2|vec3|vec4)\b/,
+          'keyword',
+        ],
+        [/\d/, 'number'],
+        [/[a-zA-Z_]\w*/, 'identifier'],
+        [/\/\/.*/, 'comment'],
+      ],
+    },
+  });
 };
 
 type Props = {
@@ -42,15 +65,22 @@ const Editor = ({ node }: Props) => {
       const file = await handle.getFile();
       const content = await file.text();
 
-      // エディタの作成
+      // 言語の登録
       const language = getLanguage(extension);
+      if (language === 'glsl') {
+        console.log('glsl');
+        registerGLSL();
+      }
+
+      // エディタの作成
       const editor = monaco.editor.create(ref.current, {
         value: content,
         language,
         theme: 'vs-dark',
         automaticLayout: true,
       });
-      // Ctrl + S
+
+      // キーバインディング
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
         if (extension === 'html') {
           setWindows((prev) => {
@@ -61,8 +91,11 @@ const Editor = ({ node }: Props) => {
           });
         }
       });
+
+      // emmetの有効化
       emmetHTML(monaco, [extension]);
 
+      // コード編集時のイベント
       editor.onDidChangeModelContent(async () => {
         const writable = await handle.createWritable();
         const content = editor.getValue();
