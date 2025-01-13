@@ -68,7 +68,6 @@ const Editor = ({ node }: Props) => {
       // 言語の登録
       const language = getLanguage(extension);
       if (language === 'glsl') {
-        console.log('glsl');
         registerGLSL();
       }
 

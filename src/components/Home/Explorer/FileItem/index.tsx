@@ -72,7 +72,6 @@ const FileItem = ({ node }: Props) => {
                 });
                 break;
               default:
-                console.log('テキストです');
                 setWindows((prev) => {
                   return new Map(prev).set(
                     node.path,
