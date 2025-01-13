@@ -5,8 +5,42 @@
     background: none;
     border: none;
   }
+
+  & > div {
+    padding-left: 4px;
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    border-radius: 4px;
+  }
+
+  & > div:hover > .entryButton {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  & > div:hover {
+    background-color: var(--hoverd-color);
+  }
 }
 
 .label {
   font-weight: 700;
+}
+
+.entryButton {
+  opacity: 0;
+  pointer-events: none;
+  width: 1rem;
+  height: 1rem;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  &:hover {
+    background-color: white;
+  }
 }
