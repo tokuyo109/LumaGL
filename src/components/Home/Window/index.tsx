@@ -123,7 +123,7 @@ const Window = () => {
                             setWindows((prev) => {
                               return new Map(prev).set(
                                 id + ':preview',
-                                <Preview path={id} />,
+                                <Preview path={id} update_at={Date.now()} />,
                               );
                             });
                           }}

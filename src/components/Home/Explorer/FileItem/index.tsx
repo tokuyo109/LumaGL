@@ -76,7 +76,8 @@ const FileItem = ({ node }: Props) => {
                 setWindows((prev) => {
                   return new Map(prev).set(
                     node.path,
-                    <Editor handle={node.handle as FileSystemFileHandle} />,
+                    // <Editor handle={node.handle as FileSystemFileHandle} />,
+                    <Editor node={node} />,
                   );
                 });
             }
