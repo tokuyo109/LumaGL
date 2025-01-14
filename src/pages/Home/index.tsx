@@ -3,30 +3,34 @@ import Menu from '../../components/Home/Menu';
 import Explorer from '../../components/Home/Explorer';
 import Window from '../../components/Home/Window';
 import styles from './index.module.css';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
 
 const Home = () => {
+  const [isOpenExplorer, setIsOpenExplorer] = useState(true);
+
   const getSystemTheme = () => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'
       : 'light';
   };
 
-  // const applyTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (event.target.value === 'os') {
-  //     const theme = getSystemTheme();
-  //     document.body.setAttribute('data-theme', theme);
-  //     return;
-  //   }
-  //   document.body.setAttribute('data-theme', event.target.value);
-  // };
+  const applyTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.value === 'os') {
+      const theme = getSystemTheme();
+      document.body.setAttribute('data-theme', theme);
+      return;
+    }
+    document.body.setAttribute('data-theme', event.target.value);
+  };
 
   useEffect(() => {
     const theme = getSystemTheme();
     document.body.setAttribute('data-theme', theme);
   }, []);
+
+  console.log(isOpenExplorer);
 
   return (
     <>
@@ -43,8 +47,21 @@ const Home = () => {
               <Menu />
             </header>
             <aside className={styles.sidebar}>
-              <div className={styles.toolbar}></div>
-              <div className={styles.tool}>
+              <div className={styles.toolbar}>
+                <button
+                  onClick={() =>
+                    setIsOpenExplorer((prev) => {
+                      return !prev;
+                    })
+                  }
+                >
+                  {isOpenExplorer ? '閉じる' : '開く'}
+                </button>
+              </div>
+              <div
+                className={styles.tool}
+                style={{ display: isOpenExplorer ? 'block' : 'none' }}
+              >
                 <Explorer />
               </div>
             </aside>
