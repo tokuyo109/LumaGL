@@ -95,11 +95,15 @@ const Editor = ({ node }: Props) => {
       emmetHTML(monaco, [extension]);
 
       // コード編集時のイベント
+      let debounce: number;
       editor.onDidChangeModelContent(async () => {
-        const writable = await handle.createWritable();
-        const content = editor.getValue();
-        writable.write(content);
-        await writable.close();
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+          const writable = await handle.createWritable();
+          const content = editor.getValue();
+          writable.write(content);
+          await writable.close();
+        }, 300);
       });
 
       editorRef.current = editor;
