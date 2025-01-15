@@ -30,8 +30,8 @@ const Home = () => {
     document.body.setAttribute('data-theme', theme);
   }, []);
 
-  console.log(isOpenExplorer);
-
+  const homeStyle = isOpenExplorer ? '240px 1fr' : '40px 1fr';
+  const sidebarStyle = isOpenExplorer ? '40px 1fr' : '40px 0px';
   return (
     <>
       <Helmet>
@@ -39,14 +39,20 @@ const Home = () => {
       </Helmet>
       <WindowProvider>
         <ExplorerProvider>
-          <main className={styles.home}>
+          <main
+            className={styles.home}
+            style={{ gridTemplateColumns: homeStyle }}
+          >
             <header className={styles.header}>
               <strong className={styles.logo}>
                 <img src="/img/logo2.svg" alt="サービスロゴ" />
               </strong>
               <Menu />
             </header>
-            <aside className={styles.sidebar}>
+            <aside
+              className={styles.sidebar}
+              style={{ gridTemplateColumns: sidebarStyle }}
+            >
               <div className={styles.toolbar}>
                 <button
                   onClick={() =>
