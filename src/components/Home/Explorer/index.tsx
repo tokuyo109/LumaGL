@@ -104,7 +104,6 @@ const Explorer = () => {
   };
 
   const ExplorerItem = (node: TreeNode) => {
-    console.log(node.name, 'レンダリング');
     if (node.type === 'directory') {
       const DirectoryComponent =
         node.path === '/' ? RootDirectoryItem : DirectoryItem;

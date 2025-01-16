@@ -7,7 +7,6 @@ type Props = {
 };
 
 const Preview = ({ path, update_at }: Props) => {
-  console.log(update_at);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
