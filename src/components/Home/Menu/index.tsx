@@ -7,57 +7,75 @@ type Node = {
   children?: Node[];
 };
 
-const menus: Node[] = [
-  {
-    label: 'ファイル',
-    children: [
-      {
-        label: '新しいテキストファイル',
-        onClick: () => {
-          console.log('新しいテキストファイル');
-        },
-      },
-      {
-        label: '新しいファイル',
-      },
-      {
-        label: '新しいウィンドウ',
-      },
-      {
-        label: '最新使用した項目を開く',
-        children: [
-          {
-            label: 'ファイル',
-          },
-          {
-            label: 'フォルダ',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    label: '編集',
-    children: [
-      {
-        label: '元に戻す',
-      },
-    ],
-  },
-  {
-    label: '表示',
-  },
-  {
-    label: 'スニペット',
-  },
-  {
-    label: 'サンプル',
-  },
-];
-
 const Menu = () => {
   const ref = useRef<HTMLUListElement>(null);
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+
+  const menus: Node[] = [
+    {
+      label: 'ファイル',
+      children: [
+        {
+          label: '新しいテキストファイル',
+          onClick: () => {
+            console.log('新しいテキストファイル');
+          },
+        },
+        {
+          label: '新しいファイル',
+        },
+        {
+          label: '新しいウィンドウ',
+        },
+        {
+          label: '最新使用した項目を開く',
+          children: [
+            {
+              label: 'ファイル',
+            },
+            {
+              label: 'フォルダ',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      label: '編集',
+      children: [
+        {
+          label: '元に戻す',
+        },
+      ],
+    },
+    {
+      label: '表示',
+    },
+    {
+      label: 'サンプル',
+    },
+    {
+      label: 'テンプレート',
+      children: [
+        {
+          label: 'glsl',
+          onClick: () => {
+            (async () => {
+              const blob = await (await fetch('/templates/glsl.zip')).blob();
+              const url = URL.createObjectURL(blob);
+              const aElement = document.createElement('a');
+              aElement.href = url;
+              aElement.download = 'GLSLテンプレート.zip';
+              aElement.click();
+            })();
+          },
+        },
+      ],
+    },
+    {
+      label: 'スニペット',
+    },
+  ];
 
   const toggleMenu = (key: string) => {
     const isOpen = openMenus[key];

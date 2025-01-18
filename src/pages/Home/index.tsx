@@ -6,6 +6,8 @@ import styles from './index.module.css';
 import { useState, useEffect } from 'react';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
+// import IconButton from '../../components/UI/IconButton';
+// import { VscFolder } from 'react-icons/vsc';
 
 const Home = () => {
   const [isOpenExplorer, setIsOpenExplorer] = useState(true);
@@ -16,14 +18,14 @@ const Home = () => {
       : 'light';
   };
 
-  const applyTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.value === 'os') {
-      const theme = getSystemTheme();
-      document.body.setAttribute('data-theme', theme);
-      return;
-    }
-    document.body.setAttribute('data-theme', event.target.value);
-  };
+  // const applyTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (event.target.value === 'os') {
+  //     const theme = getSystemTheme();
+  //     document.body.setAttribute('data-theme', theme);
+  //     return;
+  //   }
+  //   document.body.setAttribute('data-theme', event.target.value);
+  // };
 
   useEffect(() => {
     const theme = getSystemTheme();
@@ -54,6 +56,16 @@ const Home = () => {
               style={{ gridTemplateColumns: sidebarStyle }}
             >
               <div className={styles.toolbar}>
+                {/* <IconButton
+                  label="explorerToggleButton"
+                  onClick={() =>
+                    setIsOpenExplorer((prev) => {
+                      return !prev;
+                    })
+                  }
+                >
+                  <VscFolder />
+                </IconButton> */}
                 <button
                   onClick={() =>
                     setIsOpenExplorer((prev) => {
