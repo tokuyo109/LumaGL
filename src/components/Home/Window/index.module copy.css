@@ -1,0 +1,41 @@
+.window {
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.toolbarTitle {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbarButton {
+  display: flex;
+  gap: 4px;
+}
+
+.zeroState {
+  display: grid;
+  place-content: center;
+  background-color: white;
+  height: 100%;
+  width: 100%;
+}
+
+:global(.mosaic-root) {
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+}
+
+:global(.mosaic-tile) {
+  margin: 0px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
