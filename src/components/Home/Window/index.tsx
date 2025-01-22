@@ -12,6 +12,7 @@ import 'flexlayout-react/style/light.css';
 import { useWindowContext } from './context';
 import styles from './index.module.css';
 
+// レイアウトの表示設定
 const initialJsonModel: IJsonModel = {
   global: { tabEnablePopout: true },
   borders: [],
@@ -22,7 +23,7 @@ const initialJsonModel: IJsonModel = {
 };
 
 /**
- * モデルに存在するキーを収集する
+ * モデルに存在するキーを収集する関数
  */
 const collectModelKeys = (node: any, result: Set<string>) => {
   if (node.type === 'tab') result.add(node.component);
@@ -39,12 +40,12 @@ const Window = () => {
     Model.fromJson(initialJsonModel),
   );
 
-  // タブの中身を生成する処理
+  // タブの中身を生成する関数
   const factory = (node: TabNode) => {
     const key = node.getComponent();
     if (!key) return;
 
-    const content = windows.get(key);
+    const content = windows.get(key); // 選択されたファイルのコンテンツ
     if (!content) return;
 
     return <>{content}</>;
@@ -60,6 +61,7 @@ const Window = () => {
       const key = tabNode.getComponent();
       if (!key) return;
 
+      // 削除された要素を同期して再レンダリング
       setWindows((prev) => {
         const newMap = new Map(prev);
         newMap.delete(key);
