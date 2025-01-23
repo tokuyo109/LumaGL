@@ -3,13 +3,18 @@ import {
   IJsonModel,
   Model,
   Layout,
+  TabNode,
+  TabSetNode,
+  BorderNode,
+  Action,
+  ITabSetRenderValues,
   IJsonRowNode,
   IJsonTabSetNode,
-  TabNode,
-  Action,
 } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
+import Preview from '../Preview';
 import { useWindowContext } from './context';
+import { takeExtension } from '../Explorer/utils';
+import 'flexlayout-react/style/light.css';
 import styles from './index.module.css';
 
 // レイアウトの表示設定
@@ -48,7 +53,27 @@ const Window = () => {
     const content = windows.get(key); // 選択されたファイルのコンテンツ
     if (!content) return;
 
-    return <>{content}</>;
+    const extension = takeExtension(key);
+
+    return (
+      <div className={styles.tabNode}>
+        {extension === 'html' && (
+          <button
+            onClick={() => {
+              setWindows((prev) => {
+                return new Map(prev).set(
+                  key + ':preview',
+                  <Preview path={key} update_at={Date.now()}></Preview>,
+                );
+              });
+            }}
+          >
+            プレビュー
+          </button>
+        )}
+        {content}
+      </div>
+    );
   };
 
   const handleAction = (action: Action) => {
@@ -70,6 +95,15 @@ const Window = () => {
     }
     return action;
   };
+
+  // TabSetのヘッダーにボタンを追加する
+  // const handleRenderTabSet = (
+  //   tabSetNode: TabSetNode | BorderNode,
+  //   renderValues: ITabSetRenderValues,
+  // ) => {
+  //   console.log(tabSetNode);
+  //   renderValues.buttons.push(<button>test</button>);
+  // };
 
   // windowsが変更されたとき差分をmodelに反映させる
   useEffect(() => {
@@ -102,7 +136,13 @@ const Window = () => {
   if (!windows.size) return <p>何も選択されていません</p>;
   return (
     <div className={styles.window}>
-      <Layout model={model} factory={factory} onAction={handleAction}></Layout>;
+      <Layout
+        model={model}
+        factory={factory}
+        onAction={handleAction}
+        // onRenderTabSet={handleRenderTabSet}
+      ></Layout>
+      ;
     </div>
   );
 };
