@@ -1,0 +1,27 @@
+.sidebar {
+  /* display: flex; */
+  grid-area: sidebar;
+  grid-template-areas: 
+    "toolbar tool"
+  ;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+}
+
+.testButton {
+  background: none;
+  border: none;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  padding: 2px;
+  transition: background-color 0.2s;
+}
+
+.toolbar {
+  grid-area: toolbar;
+}
+
+.tool {
+  grid-area: tool;
+}

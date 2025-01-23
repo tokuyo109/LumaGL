@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import Menu from '../../components/Home/Menu';
 import Explorer from '../../components/Home/Explorer';
+import Sidebar from '../../components/Home/Sidebar';
 import Window from '../../components/Home/Window';
 import styles from './index.module.css';
 import { useState, useEffect } from 'react';
@@ -51,21 +52,12 @@ const Home = () => {
               </strong>
               <Menu />
             </header>
-            <aside
+            <Sidebar />
+            {/* <aside
               className={styles.sidebar}
               style={{ gridTemplateColumns: sidebarStyle }}
             >
               <div className={styles.toolbar}>
-                {/* <IconButton
-                  label="explorerToggleButton"
-                  onClick={() =>
-                    setIsOpenExplorer((prev) => {
-                      return !prev;
-                    })
-                  }
-                >
-                  <VscFolder />
-                </IconButton> */}
                 <button
                   onClick={() =>
                     setIsOpenExplorer((prev) => {
@@ -82,7 +74,7 @@ const Home = () => {
               >
                 <Explorer />
               </div>
-            </aside>
+            </aside> */}
             <section className={styles.window}>
               <Window />
             </section>
