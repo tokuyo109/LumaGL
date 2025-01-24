@@ -6,3 +6,9 @@
 .tabNode {
   height: 100%;
 }
+
+.renderZero {
+  height: 100%;
+  display: grid;
+  place-items: center;
+}

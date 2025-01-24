@@ -133,7 +133,8 @@ const Window = () => {
     setModel(newModel);
   }, [windows]);
 
-  if (!windows.size) return <p>何も選択されていません</p>;
+  if (!windows.size)
+    return <div className={styles.renderZero}>何も選択されていません</div>;
   return (
     <div className={styles.window}>
       <Layout

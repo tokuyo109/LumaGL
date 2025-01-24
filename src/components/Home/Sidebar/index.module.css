@@ -1,5 +1,4 @@
 .sidebar {
-  /* display: flex; */
   grid-area: sidebar;
   grid-template-areas: 
     "toolbar tool"
@@ -8,7 +7,7 @@
   grid-template-columns: 40px 1fr;
 }
 
-.testButton {
+.explorerToggleButton {
   background: none;
   border: none;
   display: grid;
@@ -20,6 +19,7 @@
 
 .toolbar {
   grid-area: toolbar;
+  padding: 8px;
 }
 
 .tool {

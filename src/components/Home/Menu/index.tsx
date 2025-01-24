@@ -12,42 +12,42 @@ const Menu = () => {
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
   const menus: Node[] = [
-    // {
-    //   label: 'ファイル',
-    //   children: [
-    //     {
-    //       label: '新しいテキストファイル',
-    //       onClick: () => {
-    //         console.log('新しいテキストファイル');
-    //       },
-    //     },
-    //     {
-    //       label: '新しいファイル',
-    //     },
-    //     {
-    //       label: '新しいウィンドウ',
-    //     },
-    //     {
-    //       label: '最新使用した項目を開く',
-    //       children: [
-    //         {
-    //           label: 'ファイル',
-    //         },
-    //         {
-    //           label: 'フォルダ',
-    //         },
-    //       ],
-    //     },
-    //   ],
-    // },
-    // {
-    //   label: '編集',
-    //   children: [
-    //     {
-    //       label: '元に戻す',
-    //     },
-    //   ],
-    // },
+    {
+      label: 'ファイル',
+      children: [
+        {
+          label: '新しいテキストファイル',
+          onClick: () => {
+            console.log('新しいテキストファイル');
+          },
+        },
+        {
+          label: '新しいファイル',
+        },
+        {
+          label: '新しいウィンドウ',
+        },
+        {
+          label: '最新使用した項目を開く',
+          children: [
+            {
+              label: 'ファイル',
+            },
+            {
+              label: 'フォルダ',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      label: '編集',
+      children: [
+        {
+          label: '元に戻す',
+        },
+      ],
+    },
     // {
     //   label: '表示',
     // },

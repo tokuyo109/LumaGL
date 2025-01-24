@@ -17,8 +17,9 @@ const Sidebar = () => {
         <button
           style={{
             backgroundColor: isOpenExplorer ? '#DBDDE6' : 'transparent',
+            // border: isOpenExplorer ? '1px solid #C8CBD9' : 'transparent',
           }}
-          className={styles.testButton}
+          className={styles.explorerToggleButton}
           onClick={() => {
             setIsOpenExplorer((prev) => !prev);
           }}

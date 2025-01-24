@@ -1,4 +1,4 @@
-// import { StrictMode } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import Router from './Router.tsx';
@@ -17,12 +17,12 @@ if ('serviceWorker' in navigator) {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <HelmetProvider>
-    <Router />
-  </HelmetProvider>,
-  // <StrictMode>
-  //   <HelmetProvider>
-  //     <Router />
-  //   </HelmetProvider>
-  // </StrictMode>,
+  // <HelmetProvider>
+  //   <Router />
+  // </HelmetProvider>,
+  <StrictMode>
+    <HelmetProvider>
+      <Router />
+    </HelmetProvider>
+  </StrictMode>,
 );
