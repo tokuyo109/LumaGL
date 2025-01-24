@@ -17,12 +17,12 @@ if ('serviceWorker' in navigator) {
 }
 
 createRoot(document.getElementById('root')!).render(
-  // <HelmetProvider>
-  //   <Router />
-  // </HelmetProvider>,
-  <StrictMode>
-    <HelmetProvider>
-      <Router />
-    </HelmetProvider>
-  </StrictMode>,
+  <HelmetProvider>
+    <Router />
+  </HelmetProvider>,
+  // <StrictMode>
+  //   <HelmetProvider>
+  //     <Router />
+  //   </HelmetProvider>
+  // </StrictMode>,
 );

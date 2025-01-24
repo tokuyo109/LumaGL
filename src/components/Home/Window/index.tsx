@@ -58,18 +58,19 @@ const Window = () => {
     return (
       <div className={styles.tabNode}>
         {extension === 'html' && (
-          <button
-            onClick={() => {
-              setWindows((prev) => {
-                return new Map(prev).set(
-                  key + ':preview',
-                  <Preview path={key} update_at={Date.now()}></Preview>,
-                );
-              });
-            }}
-          >
-            プレビュー
-          </button>
+          <></>
+          // <button
+          //   onClick={() => {
+          //     setWindows((prev) => {
+          //       return new Map(prev).set(
+          //         key + ':preview',
+          //         <Preview path={key} update_at={Date.now()}></Preview>,
+          //       );
+          //     });
+          //   }}
+          // >
+          //   プレビュー
+          // </button>
         )}
         {content}
       </div>

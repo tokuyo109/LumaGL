@@ -71,11 +71,22 @@ const Editor = ({ node }: Props) => {
         registerGLSL();
       }
 
+      // テーマの登録
+      monaco.editor.defineTheme('customTheme', {
+        base: 'vs',
+        inherit: true,
+        rules: [],
+        colors: {
+          'editor.background': '#00000000',
+        },
+      });
+
       // エディタの作成
       const editor = monaco.editor.create(ref.current, {
+        // theme: 'vs-dark',
+        theme: 'customTheme',
         value: content,
         language,
-        theme: 'vs-dark',
         automaticLayout: true,
       });
 
