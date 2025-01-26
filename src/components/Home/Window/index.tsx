@@ -10,10 +10,13 @@ import {
   ITabSetRenderValues,
   IJsonRowNode,
   IJsonTabSetNode,
+  Node,
 } from 'flexlayout-react';
 import Preview from '../Preview';
 import { useWindowContext } from './context';
 import { takeExtension } from '../Explorer/utils';
+import { VscPlay } from 'react-icons/vsc';
+import IconButton from '../../UI/IconButton';
 import 'flexlayout-react/style/light.css';
 import styles from './index.module.css';
 
@@ -45,77 +48,81 @@ const Window = () => {
     Model.fromJson(initialJsonModel),
   );
 
-  // タブの中身を生成する関数
+  /**
+   * タブの内容を生成する関数
+   */
   const factory = (node: TabNode) => {
-    const key = node.getComponent();
-    if (!key) return;
-
-    const content = windows.get(key); // 選択されたファイルのコンテンツ
-    if (!content) return;
-
-    const extension = takeExtension(key);
-
-    return (
-      <div className={styles.tabNode}>
-        {extension === 'html' && (
-          <></>
-          // <button
-          //   onClick={() => {
-          //     setWindows((prev) => {
-          //       return new Map(prev).set(
-          //         key + ':preview',
-          //         <Preview path={key} update_at={Date.now()}></Preview>,
-          //       );
-          //     });
-          //   }}
-          // >
-          //   プレビュー
-          // </button>
-        )}
-        {content}
-      </div>
-    );
+    const path = node.getComponent();
+    const content = path && windows.get(path);
+    return path && content ? (
+      <div className={styles.tabNode}>{content}</div>
+    ) : undefined;
   };
 
+  /**
+   * タブの選択や削除などの操作に応じて実行される関数
+   */
   const handleAction = (action: Action) => {
-    // 削除ボタンクリック時に削除
+    // 削除ボタン押下時
     if (action.type === 'FlexLayout_DeleteTab') {
       const nodeId: string = action.data.node;
-      const tabNode = model.getNodeById(nodeId) as TabNode;
-      if (!tabNode) return;
-
-      const key = tabNode.getComponent();
-      if (!key) return;
-
-      // 削除された要素を同期して再レンダリング
-      setWindows((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(key);
-        return newMap;
-      });
+      const node: Node | undefined = model.getNodeById(nodeId);
+      if (node instanceof TabNode) {
+        const path: string | undefined = node.getComponent();
+        path &&
+          setWindows((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(path);
+            return newMap;
+          });
+      }
     }
     return action;
   };
 
-  // TabSetのヘッダーにボタンを追加する
-  // const handleRenderTabSet = (
-  //   tabSetNode: TabSetNode | BorderNode,
-  //   renderValues: ITabSetRenderValues,
-  // ) => {
-  //   console.log(tabSetNode);
-  //   renderValues.buttons.push(<button>test</button>);
-  // };
+  /**
+   * タブグループにボタンを追加する関数
+   */
+  const onRenderTabSet = (
+    tabSetNode: TabSetNode | BorderNode,
+    renderValues: ITabSetRenderValues,
+  ) => {
+    const selectedNode: Node | undefined = tabSetNode.getSelectedNode();
+    if (selectedNode instanceof TabNode) {
+      const path = selectedNode.getComponent();
+      const extension = takeExtension(path ?? '');
+
+      path &&
+        extension === 'html' &&
+        renderValues.buttons.push(
+          <IconButton
+            key={path}
+            label="HTMLのプレビュー"
+            onClick={() => {
+              setWindows((prev) => {
+                return new Map(prev).set(
+                  path + ':preview',
+                  <Preview path={path} update_at={Date.now()}></Preview>,
+                );
+              });
+            }}
+          >
+            <VscPlay />
+          </IconButton>,
+        );
+    }
+  };
 
   // windowsが変更されたとき差分をmodelに反映させる
   useEffect(() => {
     const jsonModel: IJsonModel = model.toJson();
     const layout: IJsonRowNode = jsonModel.layout;
 
-    const modelKeys: Set<string> = new Set(); // モデルのキー配列
-    collectModelKeys(layout, modelKeys); // モデルのキーを収集して配列に追加するする
-    const windowsKeys: string[] = Array.from(windows.keys()); // 現在のキー配列
+    const modelKeys: Set<string> = new Set();
+    collectModelKeys(layout, modelKeys);
+    const windowsKeys: string[] = Array.from(windows.keys());
 
-    const toAdd: string[] = windowsKeys.filter((k) => !modelKeys.has(k)); // 追加されたキー配列
+    const toAdd: string[] = windowsKeys.filter((k) => !modelKeys.has(k));
     toAdd.forEach((key) => {
       const tabset: IJsonTabSetNode = {
         type: 'tabset',
@@ -142,7 +149,7 @@ const Window = () => {
         model={model}
         factory={factory}
         onAction={handleAction}
-        // onRenderTabSet={handleRenderTabSet}
+        onRenderTabSet={onRenderTabSet}
       ></Layout>
       ;
     </div>
