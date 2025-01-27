@@ -29,6 +29,7 @@
     background-color: var(--menu-background);
 
     position: absolute;
+    z-index: 999;
     top: 0;
     left: calc(100% + var(--ul-padding));
     padding: var(--ul-padding);
