@@ -14,11 +14,18 @@
 }
 
 /* ---- flexleyout-react ---- */
+:global(.flexlayout__tabset) {
+  background-color: rgba(0, 0, 0, 0);
+}
 :global(.flexlayout__tabset > div) {
-  background-color: var(--background);
+  background-color: rgba(0, 0, 0, 0);
 }
 
 :global(.flexlayout__tab) {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+:global(.flexlayout__tab_button--selected) {
   background-color: rgba(0, 0, 0, 0);
 }
 /* -------------------- */

@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+// import Background from '../../components/Home/Background';
 import Menu from '../../components/Home/Menu';
 import Sidebar from '../../components/Home/Sidebar';
 import Window from '../../components/Home/Window';
@@ -24,6 +25,7 @@ const Home = () => {
       <Helmet>
         <title>LumaGL - WebGL Editor</title>
       </Helmet>
+      {/* <Background /> */}
       <WindowProvider>
         <ExplorerProvider>
           <div className={styles.home}>
