@@ -11,19 +11,26 @@ void main() {
 
 const fragment = `#version 300 es
 precision highp float;
-
+uniform float u_time;
 uniform vec2 u_resolution;
-out vec4 outColor;
+out vec4 fragColor;
 
-void main() {
-  vec2 uv = gl_FragCoord.xy / u_resolution; // 0.0 ~ 1.0;
-  vec2 pos = uv * 2.0 - 1.0; // -1.0 ~ 1.0;
-  float aspect = u_resolution.x / u_resolution.y;
-  pos.x *= aspect;
-  
-  float t = length(0.0 - pos);
-  
-  outColor = vec4(uv.x, 1.0, 1.0, 1);
+float random(vec3 p)
+{
+  return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+}
+
+void main()
+{
+  vec2 pos = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
+
+  float noise = random(vec3(pos, 1.0));
+  float wave = sin(pos.x + pos.y + u_time) * 0.15;
+  wave += noise * 0.025;
+
+  vec3 color = vec3(0.698, 0.7608, 0.8039);
+  color += wave;
+  fragColor = vec4(color, 1.0);
 }
 `;
 
@@ -59,14 +66,27 @@ const createProgram = (
   gl.deleteProgram(program);
 };
 
+const setCard = (gl: WebGL2RenderingContext) => {
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1]),
+    gl.STATIC_DRAW,
+  );
+};
+
 const Background = () => {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // WebGLコンテキストを取得する
     const canvas = ref.current;
     const gl = canvas?.getContext('webgl2');
-    if (!gl) return;
+    if (!(canvas && gl)) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
     // シェーダーを作成する
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertex);
@@ -78,42 +98,44 @@ const Background = () => {
     if (!program) return;
     gl.useProgram(program);
 
-    // u_resolution変数の位置を取得する
-    const resolutionUniformLocation = gl.getUniformLocation(
-      program,
-      'u_resolution',
-    );
-    // GPUにキャンバスの解像度を送る
-    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    // 板ポリゴンデータをバッファに格納
+    setCard(gl);
 
-    // a_position変数の位置を取得する
+    // a_positionの用意と頂点データの取得方法の設定
     const positionAttributeLocation = gl.getAttribLocation(
       program,
       'a_position',
     );
-
-    // 頂点データをバッファに格納する
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-    const positions = [0, 0, 0, 0.5, 0.7, 0];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-    // VAOを作成する
-    const vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
-
-    // a_position変数を有効にする
     gl.enableVertexAttribArray(positionAttributeLocation);
     gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // クリア
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // Uniform変数の登録と初期化
+    const resolutionUniformLocation = gl.getUniformLocation(
+      program,
+      'u_resolution',
+    );
+    const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
+    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    gl.uniform1f(timeUniformLocation, 0.5);
 
-    // レンダリング
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const startTime = new Date();
+    const animate = () => {
+      requestAnimationFrame(animate);
+
+      // Uniform変数の更新
+      const elapsedTime = (new Date().getTime() - startTime.getTime()) / 1000;
+      gl.uniform1f(timeUniformLocation, elapsedTime);
+      gl.uniform2f(
+        resolutionUniformLocation,
+        gl.canvas.width,
+        gl.canvas.height,
+      );
+
+      // レンダリング
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.flush();
+    };
+    animate();
   }, []);
 
   return <canvas ref={ref} className={styles.background}></canvas>;
