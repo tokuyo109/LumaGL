@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import JSZip from 'jszip';
 import styles from './index.module.css';
 
 type Node = {
@@ -54,24 +55,59 @@ const Menu = () => {
     // {
     //   label: 'サンプル',
     // },
-    // {
-    //   label: 'テンプレート',
-    //   children: [
-    //     {
-    //       label: 'glsl',
-    //       onClick: () => {
-    //         (async () => {
-    //           const blob = await (await fetch('/templates/glsl.zip')).blob();
-    //           const url = URL.createObjectURL(blob);
-    //           const aElement = document.createElement('a');
-    //           aElement.href = url;
-    //           aElement.download = 'GLSLテンプレート.zip';
-    //           aElement.click();
-    //         })();
-    //       },
-    //     },
-    //   ],
-    // },
+    {
+      label: 'テンプレート',
+      children: [
+        {
+          label: 'glsl',
+          onClick: () => {
+            (async () => {
+              const blob: Blob = await (
+                await fetch('/templates/glsl.zip')
+              ).blob();
+              // jszipを使用して解凍
+              const zip: JSZip = await JSZip.loadAsync(blob);
+
+              // ユーザーディレクトリを要求する
+              const dirHandle = await (
+                window as unknown as {
+                  showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
+                }
+              ).showDirectoryPicker();
+
+              for (const [entryPath, entry] of Object.entries(zip.files)) {
+                if (entry.dir) continue;
+
+                const pathParts = entryPath.split('/');
+                const fileName = pathParts.pop();
+                if (!fileName) continue;
+
+                let currentDirHandle = dirHandle;
+
+                // サブディレクトリを作成する
+                for (const part of pathParts) {
+                  currentDirHandle = await currentDirHandle.getDirectoryHandle(
+                    part,
+                    { create: true },
+                  );
+                }
+
+                // 書き込み用のハンドルを作成する
+                const handle = await currentDirHandle.getFileHandle(fileName, {
+                  create: true,
+                });
+                const fileData = await entry.async('uint8array');
+                const writable = await handle.createWritable();
+                writable.write(fileData);
+                writable.close();
+
+                console.log('zipファイルのコピーが完了しました');
+              }
+            })();
+          },
+        },
+      ],
+    },
     // {
     //   label: 'スニペット',
     // },

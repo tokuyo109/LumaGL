@@ -120,6 +120,9 @@ const Explorer = () => {
 
   return (
     <div className={styles.explorer}>
+      <button className={styles.selectDirectory} onClick={() => handleClick()}>
+        ディレクトリを選択
+      </button>
       {root ? (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <ul>{ExplorerItem(root)}</ul>
