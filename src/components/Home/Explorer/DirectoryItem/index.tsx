@@ -21,14 +21,7 @@ import ContextMenuDivider from '../ContextMenu/ContextMenuDivider';
 import ContextMenuGroup from '../ContextMenu/ContextMenuGroup';
 import { useContextMenu } from '../ContextMenu/hook';
 
-import {
-  createEntry,
-  addEntryToIndexedDB,
-  removeEntry,
-  removeEntryFromIndexedDB,
-  renameEntry,
-  renameEntryOfIndexedDB,
-} from '../utils';
+import { createEntry, removeEntry, renameEntry } from '../utils';
 
 type Props = {
   node: TreeNode;
@@ -115,15 +108,10 @@ const DirectoryItem = ({ node, children }: Props) => {
               onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
                 const parent = entries.get(node.parentPath);
                 if (parent) {
-                  const newHandle = await renameEntry(
+                  await renameEntry(
                     node.handle,
                     parent.handle as FileSystemDirectoryHandle,
                     event.target.value,
-                  );
-                  await renameEntryOfIndexedDB(
-                    node,
-                    parent,
-                    newHandle as FileSystemFileHandle,
                   );
                   refreshExplorer();
                 }
@@ -165,7 +153,6 @@ const DirectoryItem = ({ node, children }: Props) => {
                   creatingType,
                 );
                 if (handle) {
-                  await addEntryToIndexedDB(node, handle);
                   setCreatingType(null);
                   refreshExplorer();
                 }
@@ -202,7 +189,6 @@ const DirectoryItem = ({ node, children }: Props) => {
                       parent.handle as FileSystemDirectoryHandle,
                       node.name,
                     );
-                    await removeEntryFromIndexedDB(node.path);
                     refreshExplorer();
                   }
                   hideContextMenu();

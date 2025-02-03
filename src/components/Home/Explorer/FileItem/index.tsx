@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { useExplorerContext } from '../context';
 import { useWindowContext } from '../../Window/context';
 import { useDraggable } from '@dnd-kit/core';
-import {
-  takeExtension,
-  removeEntryFromIndexedDB,
-  removeEntry,
-  renameEntry,
-  renameEntryOfIndexedDB,
-} from '../utils';
+import { takeExtension, removeEntry, renameEntry } from '../utils';
 import { TreeNode } from '../types';
 import styles from './index.module.css';
 import FileIcon from '../FileIcon';
@@ -73,11 +67,7 @@ const FileItem = ({ node }: Props) => {
                 break;
               default:
                 setWindows((prev) => {
-                  return new Map(prev).set(
-                    node.path,
-                    // <Editor handle={node.handle as FileSystemFileHandle} />,
-                    <Editor node={node} />,
-                  );
+                  return new Map(prev).set(node.path, <Editor node={node} />);
                 });
             }
           }}
@@ -89,15 +79,10 @@ const FileItem = ({ node }: Props) => {
               onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
                 const parent = entries.get(node.parentPath);
                 if (parent) {
-                  const newHandle = await renameEntry(
+                  await renameEntry(
                     node.handle,
                     parent.handle as FileSystemDirectoryHandle,
                     event.target.value,
-                  );
-                  await renameEntryOfIndexedDB(
-                    node,
-                    parent,
-                    newHandle as FileSystemFileHandle,
                   );
                   refreshExplorer();
                 }
@@ -131,7 +116,6 @@ const FileItem = ({ node }: Props) => {
                       parent.handle as FileSystemDirectoryHandle,
                       node.name,
                     );
-                    await removeEntryFromIndexedDB(node.path);
                     refreshExplorer();
                   }
                   hideContextMenu();

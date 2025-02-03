@@ -6,7 +6,7 @@ import { TreeNode } from '../types';
 import styles from './index.module.css';
 import { VscNewFile, VscNewFolder } from 'react-icons/vsc';
 import TextInput from '../TextInput';
-import { createEntry, addEntryToIndexedDB } from '../utils';
+import { createEntry } from '../utils';
 
 type Props = {
   node: TreeNode;
@@ -80,7 +80,6 @@ const RootDirectoryItem = ({ node, children }: Props) => {
                 creatingType,
               );
               if (handle) {
-                await addEntryToIndexedDB(node, handle);
                 setCreatingType(null);
                 refreshExplorer();
               }

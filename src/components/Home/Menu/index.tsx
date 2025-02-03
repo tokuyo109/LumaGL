@@ -1,4 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useExplorerContext } from '../Explorer/context';
+import {
+  selectDirectory,
+  createEntriesHash,
+  registerRootDirectory,
+} from '../Explorer/utils';
 import JSZip from 'jszip';
 import styles from './index.module.css';
 
@@ -11,33 +17,21 @@ type Node = {
 const Menu = () => {
   const ref = useRef<HTMLUListElement>(null);
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+  const { setEntries, refreshExplorer } = useExplorerContext();
 
   const menus: Node[] = [
     {
       label: 'ファイル',
       children: [
         {
-          label: '新しいテキストファイル',
-          onClick: () => {
-            console.log('新しいテキストファイル');
+          label: 'フォルダーを開く',
+          onClick: async () => {
+            const dirHandle = await selectDirectory();
+            if (!dirHandle) return;
+            await registerRootDirectory(dirHandle);
+            const entries = await createEntriesHash(dirHandle);
+            setEntries(entries);
           },
-        },
-        {
-          label: '新しいファイル',
-        },
-        {
-          label: '新しいウィンドウ',
-        },
-        {
-          label: '最新使用した項目を開く',
-          children: [
-            {
-              label: 'ファイル',
-            },
-            {
-              label: 'フォルダ',
-            },
-          ],
         },
       ],
     },
@@ -49,12 +43,6 @@ const Menu = () => {
         },
       ],
     },
-    // {
-    //   label: '表示',
-    // },
-    // {
-    //   label: 'サンプル',
-    // },
     {
       label: 'テンプレート',
       children: [
@@ -103,14 +91,13 @@ const Menu = () => {
 
                 console.log('zipファイルのコピーが完了しました');
               }
+
+              refreshExplorer();
             })();
           },
         },
       ],
     },
-    // {
-    //   label: 'スニペット',
-    // },
   ];
 
   const toggleMenu = (key: string) => {

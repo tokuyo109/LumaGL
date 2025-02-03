@@ -18,3 +18,5 @@ export type Entry = {
 };
 
 export type TreeNode = Entry & { children: TreeNode[] };
+
+export type Root = { path: string;handle: FileSystemDirectoryHandle } | undefined;

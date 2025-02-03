@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useExplorerContext } from './context';
 import {
   selectDirectory,
-  registerEntry,
-  getAllFromIndexedDB,
   buildTree,
   moveEntry,
+  registerRootDirectory,
+  getAllFromIndexedDB,
 } from './utils';
 import RootDirectoryItem from './RootDirectoryItem';
 import DirectoryItem from './DirectoryItem';
@@ -46,8 +46,6 @@ const Explorer = () => {
   useEffect(() => {
     (async () => {
       const entries = await getAllFromIndexedDB();
-      if (!entries) return;
-
       setEntries(entries);
     })();
   }, []);
@@ -62,10 +60,10 @@ const Explorer = () => {
     const dirHandle = await selectDirectory();
     if (!dirHandle) return;
 
-    await registerEntry(dirHandle);
+    await registerRootDirectory(dirHandle);
 
-    const updatedEntries = await getAllFromIndexedDB();
-    if (updatedEntries) setEntries(updatedEntries);
+    const updateEntreis = await getAllFromIndexedDB();
+    updateEntreis && setEntries(updateEntreis);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -75,7 +73,6 @@ const Explorer = () => {
       const activeNode = entries.get(`${active.id}`);
       const overNode = entries.get(`${over.id}`);
       if (!(activeNode && overNode)) return;
-
       switch (activeNode.type) {
         case 'file':
           if (activeNode.parentPath === overNode.path) {
@@ -92,10 +89,8 @@ const Explorer = () => {
           }
           break;
       }
-
       const parentNode = entries.get(activeNode.parentPath);
       if (!parentNode) return;
-
       await moveEntry(entries, activeNode, overNode);
       refreshExplorer();
     } catch (error) {
@@ -120,9 +115,6 @@ const Explorer = () => {
 
   return (
     <div className={styles.explorer}>
-      <button className={styles.selectDirectory} onClick={() => handleClick()}>
-        ディレクトリを選択
-      </button>
       {root ? (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <ul>{ExplorerItem(root)}</ul>
