@@ -369,12 +369,10 @@ const copyDirectory = async (oldHandle: FileSystemDirectoryHandle, newHandle: Fi
 const copyEntry = async (oldHandle: Handle, newHandle: Handle) => {
   // ファイルをコピーする
   if (oldHandle.kind === 'file' && newHandle.kind === 'file') {
-    console.log('ファイルをコピーする');
     await copyFile(oldHandle, newHandle);
   }
   // ディレクトリをコピーする
   else if (oldHandle.kind === 'directory' && newHandle.kind === 'directory') {
-    console.log('ディレクトリをコピーする');
     await copyDirectory(oldHandle, newHandle);
   }
 };
