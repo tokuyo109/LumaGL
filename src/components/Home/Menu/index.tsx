@@ -57,11 +57,8 @@ const Menu = () => {
               const zip: JSZip = await JSZip.loadAsync(blob);
 
               // ユーザーディレクトリを要求する
-              const dirHandle = await (
-                window as unknown as {
-                  showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>;
-                }
-              ).showDirectoryPicker();
+              const dirHandle = await selectDirectory();
+              if (!dirHandle) return;
 
               for (const [entryPath, entry] of Object.entries(zip.files)) {
                 if (entry.dir) continue;
@@ -86,12 +83,11 @@ const Menu = () => {
                 });
                 const fileData = await entry.async('uint8array');
                 const writable = await handle.createWritable();
-                writable.write(fileData);
-                writable.close();
+                await writable.write(fileData);
+                await writable.close();
 
                 console.log('zipファイルのコピーが完了しました');
               }
-
               refreshExplorer();
             })();
           },

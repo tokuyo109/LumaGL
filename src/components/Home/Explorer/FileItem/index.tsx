@@ -77,15 +77,8 @@ const FileItem = ({ node }: Props) => {
               type="text"
               autoFocus
               onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
-                const parent = entries.get(node.parentPath);
-                if (parent) {
-                  await renameEntry(
-                    node.handle,
-                    parent.handle as FileSystemDirectoryHandle,
-                    event.target.value,
-                  );
-                  refreshExplorer();
-                }
+                await renameEntry(entries, node, event.target.value);
+                refreshExplorer();
                 setIsRenaming(false);
               }}
             />

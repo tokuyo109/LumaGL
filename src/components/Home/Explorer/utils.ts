@@ -311,14 +311,8 @@ export const createEntry = async (
   kind: 'directory' | 'file'
 ): Promise<Handle> => {
   try {
-    switch (kind) {
-      case 'directory':
-        return await dirHandle.getDirectoryHandle(name, { create: true });
-      case 'file':
-        return await dirHandle.getFileHandle(name, { create: true });
-      default:
-        throw new Error(`${kind}は正しい型ではありません`);
-    }
+    if (kind === 'directory') return await dirHandle.getDirectoryHandle(name, { create: true });
+    return await dirHandle.getFileHandle(name, { create: true });
   } catch (error) {
     console.error(
       `エントリー"${name}"の作成に失敗しました:`,
@@ -346,114 +340,74 @@ export const removeEntry = async (
 };
 
 /**
- * ファイル・ディレクトリの名前を変更する関数
+ * ファイルをコピーする関数
  */
-export const renameEntry = async (
-  source: FileSystemHandle,
-  sourceParent: FileSystemDirectoryHandle,
-  newName: string,
-) => {
-  if (source.name === newName) return; // 名前が同じであればそのまま返す
-
-  const copyEntry = async (
-    handle: FileSystemHandle,
-    targetParent: FileSystemDirectoryHandle,
-    newName: string
-  ): Promise<FileSystemHandle> => {
-    if (handle.kind === 'file') {
-      // ファイルをコピー
-      const file = await (handle as FileSystemFileHandle).getFile();
-      const newHandle = await targetParent.getFileHandle(newName, { create: true });
-      const writable = await newHandle.createWritable();
-      await writable.write(file);
-      await writable.close();
-      return newHandle;
-    } else if (handle.kind === 'directory') {
-      // ディレクトリをコピー
-      const newDirHandle = await targetParent.getDirectoryHandle(newName, { create: true });
-      for await (const [name, childHandle] of (handle as unknown) as AsyncIterable<[string, FileSystemHandle]>) {
-        await copyEntry(childHandle, newDirHandle, name);
-      }
-      return newDirHandle;
-    }
-    throw new Error(`${handle.kind}は正しい型ではありません`);
-  };
-
-  try {
-    // 新しいエントリを作成
-    const newHandle = await copyEntry(source, sourceParent, newName);
-    
-    // 元のエントリを削除
-    await sourceParent.removeEntry(source.name, { recursive: true });
-
-    console.log(`エントリー"${source.name}"の名前を"${newName}"に変更しました`);
-    return newHandle;
-  } catch (error) {
-    console.error(
-      `エントリー"${source.name}"の名前変更に失敗しました`,
-      error instanceof Error ? error.message : error
-    );
-  }
+const copyFile = async (oldHandle: FileSystemFileHandle, newHandle: FileSystemFileHandle) => {
+  const file = await oldHandle.getFile();
+  const writable = await newHandle.createWritable();
+  await writable.write(await file.arrayBuffer());
+  await writable.close();
 };
 
 /**
- * ファイル・ディレクトリを移動する関数
+ * ディレクトリをコピーする関数
  */
+const copyDirectory = async (oldHandle: FileSystemDirectoryHandle, newHandle: FileSystemDirectoryHandle) => {
+  for await (const [name, handle] of (oldHandle as unknown) as AsyncIterable<[string, Handle]>) {
+    if (handle.kind === 'file') {
+      const chlidFileHandle = await newHandle.getFileHandle(name, { create: true });
+      await copyFile(handle, chlidFileHandle);
+    }
+    else if (handle.kind === 'directory') {
+      const childDirectoryHandle = await newHandle.getDirectoryHandle(name, { create: true });
+      await copyDirectory(handle, childDirectoryHandle);
+    }
+  }
+};
+
+/** エントリーをコピーする関数 */
+const copyEntry = async (oldHandle: Handle, newHandle: Handle) => {
+  // ファイルをコピーする
+  if (oldHandle.kind === 'file' && newHandle.kind === 'file') {
+    console.log('ファイルをコピーする');
+    await copyFile(oldHandle, newHandle);
+  }
+  // ディレクトリをコピーする
+  else if (oldHandle.kind === 'directory' && newHandle.kind === 'directory') {
+    console.log('ディレクトリをコピーする');
+    await copyDirectory(oldHandle, newHandle);
+  }
+};
+
+/** エントリーの名前を変更する関数 */
+export const renameEntry = async (entries: Map<string, TreeNode>, node: TreeNode, newName: string) => {
+  // 親のノードを取得する
+  const parent = entries.get(node.parentPath);
+  if (!parent) return;
+  const parentHandle = parent.handle as FileSystemDirectoryHandle;
+  const oldHandle = node.handle;
+  const newHandle: Handle = node.type === 'file'
+    ? await parentHandle.getFileHandle(newName, { create: true })
+    : await parentHandle.getDirectoryHandle(newName, { create: true });
+  await copyEntry(oldHandle, newHandle);
+  await parentHandle.removeEntry(oldHandle.name, { recursive: true });
+};
+
+/** エントリーを移動する関数 */
 export const moveEntry = async (
   entries: Map<string, TreeNode>,
   activeNode: TreeNode,
   overNode: TreeNode
 ) => {
-  const copyEntry = async (
-    activeNode: TreeNode,
-    overNode: TreeNode
-  ) => {
-    if (activeNode.type === 'file') {
+  const parent = entries.get(activeNode.parentPath);
+  if (!parent) return;
+  const parentHandle = parent.handle as FileSystemDirectoryHandle;
 
-      // ファイルをコピー
-      const handle = activeNode.handle as FileSystemFileHandle;
-      const file = await handle.getFile();
-      
-      // 新しいファイルを作成
-      const targetDirHandle = overNode.handle as FileSystemDirectoryHandle;
-      const newHandle = await targetDirHandle.getFileHandle(handle.name, { create: true });
-
-      // ファイルを新しいファイルにペースト
-      const writable = await newHandle.createWritable();
-      await writable.write(await file.arrayBuffer());
-      await writable.close();
-
-      // 元のファイルを削除
-      const parentNode = entries.get(activeNode.parentPath);
-      if (!parentNode) return;
-      const parentDirHandle = parentNode.handle as FileSystemDirectoryHandle;
-      await parentDirHandle.removeEntry(activeNode.name, { recursive: true });
-    } else if (activeNode.type === 'directory') {
-
-      // 新しいディレクトリを作成
-      const targetDirHandle = overNode.handle as FileSystemDirectoryHandle;
-      const newDirHandle = await targetDirHandle.getDirectoryHandle(activeNode.name, { create: true });
-
-      // サブディレクトリのコピー
-      activeNode.children.forEach(async (child) => {
-        const targetNode: TreeNode = {
-          path: makePath(activeNode.parentPath, activeNode.path),
-          parentPath: activeNode.parentPath,
-          name: newDirHandle.name,
-          type: 'directory',
-          handle: newDirHandle,
-          children: []
-        };
-        await copyEntry(child, targetNode);
-      });
-
-      // 元ディレクトリの削除
-      const parentNode = entries.get(activeNode.parentPath);
-      if (!parentNode) return;
-      const parentDirHandle = parentNode.handle as FileSystemDirectoryHandle;
-      await parentDirHandle.removeEntry(activeNode.name, { recursive: true });
-    }
-  }
-
-  await copyEntry(activeNode, overNode);
+  const activeHandle = activeNode.handle;
+  const overHandle = overNode.handle as FileSystemDirectoryHandle;
+  const newHandle: Handle = activeNode.type === 'file'
+    ? await overHandle.getFileHandle(activeHandle.name, { create: true })
+    : await overHandle.getDirectoryHandle(activeHandle.name, { create: true });
+  await copyEntry(activeHandle, newHandle);
+  await parentHandle.removeEntry(activeHandle.name, { recursive: true });
 };
