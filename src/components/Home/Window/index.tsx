@@ -151,7 +151,6 @@ const Window = () => {
         onAction={handleAction}
         onRenderTabSet={onRenderTabSet}
       ></Layout>
-      ;
     </div>
   );
 };

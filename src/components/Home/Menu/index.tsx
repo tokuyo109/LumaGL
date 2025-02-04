@@ -47,11 +47,11 @@ const Menu = () => {
       label: 'テンプレート',
       children: [
         {
-          label: 'glsl',
+          label: 'WebGL2',
           onClick: () => {
             (async () => {
               const blob: Blob = await (
-                await fetch('/templates/glsl.zip')
+                await fetch('/templates/WebGL2.zip')
               ).blob();
               // jszipを使用して解凍
               const zip: JSZip = await JSZip.loadAsync(blob);

@@ -19,10 +19,6 @@
     opacity: 1;
     pointer-events: auto;
   }
-
-  & > div:hover {
-    background-color: var(--hoverd-color);
-  }
 }
 
 .label {

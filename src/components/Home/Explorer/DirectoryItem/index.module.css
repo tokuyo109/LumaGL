@@ -26,9 +26,14 @@
   }
 }
 
+.label {
+  color: var(--text);
+}
+
 .toggleButton {
   width: 1rem;
   height: 1rem;
+  color: var(--text);
 
   svg {
     width: 100%;
@@ -41,6 +46,7 @@
   pointer-events: none;
   width: 1rem;
   height: 1rem;
+  color: var(--text);
 
   svg {
     width: 100%;
@@ -48,6 +54,6 @@
   }
 
   &:hover {
-    background-color: white;
+    background-color: var(--hoverd-color);
   }
 }

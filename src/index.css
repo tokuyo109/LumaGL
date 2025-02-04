@@ -6,7 +6,7 @@ body[data-theme="light"] {
   --background: #F5F6F8;
   --white: #f5f6f8;
   --black: #121212;
-  --shadow: rbga(179, 178, 185, 0.2);
+  --shadow: rgba(179, 178, 185, 0.2);
   --menu-background: #EDEEF2;
   --modal: #EDEEF2;
   --border: #C8CBD9;
@@ -16,7 +16,7 @@ body[data-theme="light"] {
 body[data-theme="dark"] {
   --primary: #5F5DFF;
   --secondary: #8B95FF;
-  --shadow: rbga(179, 178, 185, 0.2);
+  --shadow: rgba(179, 178, 185, 0.2);
   --text: #DBDDE6;
   --secondary-text: #4F4F4F;
   --background: #121212;

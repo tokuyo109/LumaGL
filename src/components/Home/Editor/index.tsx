@@ -4,6 +4,7 @@ import { emmetHTML } from 'emmet-monaco-es';
 import './monacoWorker';
 import Preview from '../Preview';
 import { useWindowContext } from '../Window/context';
+import { useSettingContext } from '../Setting/context';
 import { takeExtension } from '../Explorer/utils';
 import styles from './index.module.css';
 import { Entry } from '../Explorer/types';
@@ -51,6 +52,7 @@ type Props = {
 
 const Editor = ({ node }: Props) => {
   const { setWindows } = useWindowContext();
+  const { theme } = useSettingContext();
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const extension = takeExtension(node.name);
@@ -73,11 +75,12 @@ const Editor = ({ node }: Props) => {
 
       // テーマの登録
       monaco.editor.defineTheme('customTheme', {
-        base: 'vs',
+        base: theme === 'light' ? 'vs' : 'vs-dark',
         inherit: true,
         rules: [],
         colors: {
           'editor.background': '#00000000',
+          'editor.focusBorder': '#00000000',
         },
       });
 

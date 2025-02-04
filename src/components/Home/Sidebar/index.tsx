@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import Setting from '../Setting';
 import Explorer from '../Explorer';
-import { VscFolder } from 'react-icons/vsc';
+import IconButton from '../../UI/IconButton';
+import { useWindowContext } from '../Window/context';
+
+import { VscFolder, VscInfo } from 'react-icons/vsc';
 import styles from './index.module.css';
 
 const Sidebar = () => {
   const [isOpenExplorer, setIsOpenExplorer] = useState(true);
+  const { setWindows } = useWindowContext();
 
   return (
     <aside
@@ -14,18 +19,34 @@ const Sidebar = () => {
       className={styles.sidebar}
     >
       <div className={styles.toolbar}>
-        <button
-          style={{
-            backgroundColor: isOpenExplorer ? '#DBDDE6' : 'transparent',
-            // border: isOpenExplorer ? '1px solid #C8CBD9' : 'transparent',
-          }}
-          className={styles.explorerToggleButton}
-          onClick={() => {
-            setIsOpenExplorer((prev) => !prev);
-          }}
-        >
-          <VscFolder />
-        </button>
+        <div>
+          <button
+            style={{
+              backgroundColor: isOpenExplorer
+                ? 'var(--hoverd-color)'
+                : 'transparent',
+              // border: isOpenExplorer ? '1px solid #C8CBD9' : 'transparent',
+            }}
+            className={styles.explorerToggleButton}
+            onClick={() => {
+              setIsOpenExplorer((prev) => !prev);
+            }}
+          >
+            <VscFolder />
+          </button>
+        </div>
+        <div>
+          <IconButton
+            label="設定"
+            onClick={() =>
+              setWindows((prev) =>
+                new Map(prev).set('設定画面', <Setting></Setting>),
+              )
+            }
+          >
+            <VscInfo />
+          </IconButton>
+        </div>
       </div>
 
       <div

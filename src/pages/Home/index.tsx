@@ -5,6 +5,7 @@ import Sidebar from '../../components/Home/Sidebar';
 import Window from '../../components/Home/Window';
 import styles from './index.module.css';
 import { useEffect } from 'react';
+import { SettingProvider } from '../../components/Home/Setting/context';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
 
@@ -26,24 +27,26 @@ const Home = () => {
         <title>LumaGL - WebGL Editor</title>
       </Helmet>
       {/* <Background /> */}
-      <WindowProvider>
-        <ExplorerProvider>
-          <div className={styles.home}>
-            <header className={styles.header}>
-              <strong className={styles.logo}>
-                <img src="/img/logo2.svg" alt="サービスロゴ" />
-              </strong>
-              <Menu />
-            </header>
-            <main className={styles.main}>
-              <Sidebar />
-              <section className={styles.window}>
-                <Window />
-              </section>
-            </main>
-          </div>
-        </ExplorerProvider>
-      </WindowProvider>
+      <SettingProvider>
+        <WindowProvider>
+          <ExplorerProvider>
+            <div className={styles.home}>
+              <header className={styles.header}>
+                <strong className={styles.logo}>
+                  <img src="/img/logo2.svg" alt="サービスロゴ" />
+                </strong>
+                <Menu />
+              </header>
+              <main className={styles.main}>
+                <Sidebar />
+                <section className={styles.window}>
+                  <Window />
+                </section>
+              </main>
+            </div>
+          </ExplorerProvider>
+        </WindowProvider>
+      </SettingProvider>
     </>
   );
 };

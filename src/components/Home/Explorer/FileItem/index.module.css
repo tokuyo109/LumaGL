@@ -13,6 +13,7 @@
   border: none;
   display: flex;
   gap: 4px;
+  color: var(--text);
 }
 
 .container {
