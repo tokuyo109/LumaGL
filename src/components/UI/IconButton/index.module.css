@@ -28,3 +28,8 @@
     }
   }
 }
+
+.button svg {
+  height: 16px;
+  color: var(--text);
+}

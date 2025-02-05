@@ -14,9 +14,10 @@ import {
 } from 'flexlayout-react';
 import Preview from '../Preview';
 import { useWindowContext } from './context';
-import { takeExtension } from '../Explorer/utils';
+import { takeExtension, takePathname } from '../Explorer/utils';
 import { VscPlay } from 'react-icons/vsc';
 import IconButton from '../../UI/IconButton';
+import FlexLayoutIconButton from '../../UI/FlexLayoutIconButton';
 import 'flexlayout-react/style/light.css';
 import styles from './index.module.css';
 
@@ -55,7 +56,10 @@ const Window = () => {
     const path = node.getComponent();
     const content = path && windows.get(path);
     return path && content ? (
-      <div className={styles.tabNode}>{content}</div>
+      <div className={styles.tabNode}>
+        {/* <div>{path}</div> */}
+        {content}
+      </div>
     ) : undefined;
   };
 
@@ -95,9 +99,7 @@ const Window = () => {
       path &&
         extension === 'html' &&
         renderValues.buttons.push(
-          <IconButton
-            key={path}
-            label="HTMLのプレビュー"
+          <FlexLayoutIconButton
             onClick={() => {
               setWindows((prev) => {
                 return new Map(prev).set(
@@ -108,7 +110,21 @@ const Window = () => {
             }}
           >
             <VscPlay />
-          </IconButton>,
+          </FlexLayoutIconButton>,
+          // <IconButton
+          //   key={path}
+          //   label="HTMLのプレビュー"
+          //   onClick={() => {
+          //     setWindows((prev) => {
+          //       return new Map(prev).set(
+          //         path + ':preview',
+          //         <Preview path={path} update_at={Date.now()}></Preview>,
+          //       );
+          //     });
+          //   }}
+          // >
+          //   <VscPlay />
+          // </IconButton>,
         );
     }
   };
@@ -129,8 +145,9 @@ const Window = () => {
         children: [
           {
             type: 'tab',
-            name: key,
+            name: takePathname(key),
             component: key,
+            className: styles.tab,
           },
         ],
       };

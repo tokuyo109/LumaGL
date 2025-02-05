@@ -3,8 +3,19 @@
   height: 100%;
 }
 
+.tab {
+  color: var(--text) !important;
+  background-color: var(--modal);
+}
+
+.tab:hover {
+  color: var(-text);
+  background-color: var(--hoverd-color);
+}
+
 .tabNode {
   height: 100%;
+  background-color: white;
 }
 
 .renderZero {
@@ -27,5 +38,6 @@
 
 :global(.flexlayout__tab_button--selected) {
   background-color: rgba(0, 0, 0, 0);
+  border-bottom: 1px solid var(--primary);
 }
 /* -------------------- */

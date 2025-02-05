@@ -33,7 +33,7 @@ const Home = () => {
             <div className={styles.home}>
               <header className={styles.header}>
                 <strong className={styles.logo}>
-                  <img src="/img/logo2.svg" alt="サービスロゴ" />
+                  <img src="/img/logo.svg" alt="サービスロゴ" />
                 </strong>
                 <Menu />
               </header>
