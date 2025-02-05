@@ -16,7 +16,6 @@ import Preview from '../Preview';
 import { useWindowContext } from './context';
 import { takeExtension, takePathname } from '../Explorer/utils';
 import { VscPlay } from 'react-icons/vsc';
-import IconButton from '../../UI/IconButton';
 import FlexLayoutIconButton from '../../UI/FlexLayoutIconButton';
 import 'flexlayout-react/style/light.css';
 import styles from './index.module.css';
