@@ -116,17 +116,21 @@ const expandRootHandle = async (
     parentPath = ''
   ) => {
     try {
+      const tasks = [];
       for await (const [name, handle] of dirHandle) {
         const path = makePath(parentPath, name);
-        if (handle.kind === 'directory') {
-          await dfs(handle, path);
-        }
+
         const entry = {
           path: path,
           handle: handle,
         };
         entries.set(entry.path, entry);
+        
+        if (handle.kind === 'directory') {
+          tasks.push(dfs(handle, path));
+        }
       }
+      await Promise.all(tasks);
     } catch (error) {
       console.error(`${dirHandle.name}ディレクトリの探索中にエラーが発生しました:`, error);
     }
@@ -176,4 +180,3 @@ self.addEventListener('fetch', (event) => {
     })());
   }
 });
-
