@@ -111,20 +111,6 @@ const Window = () => {
           >
             <VscPlay />
           </FlexLayoutIconButton>,
-          // <IconButton
-          //   key={path}
-          //   label="HTMLのプレビュー"
-          //   onClick={() => {
-          //     setWindows((prev) => {
-          //       return new Map(prev).set(
-          //         path + ':preview',
-          //         <Preview path={path} update_at={Date.now()}></Preview>,
-          //       );
-          //     });
-          //   }}
-          // >
-          //   <VscPlay />
-          // </IconButton>,
         );
     }
   };
