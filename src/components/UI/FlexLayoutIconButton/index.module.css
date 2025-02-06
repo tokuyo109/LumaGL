@@ -1,4 +1,5 @@
 .flexLayoutIconButton {
+  background-color: var(--modal);
   border: none;
   display: flex;
   justify-content: center;

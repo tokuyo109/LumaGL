@@ -159,19 +159,54 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
   if (url.pathname.startsWith('/entries/')) {
     const relativePath = `/${url.pathname.replace('/entries/', '')}`;
 
     event.respondWith((async () => {
       try {
+        // ファイルハンドルを取得する
         const rootHandle = await getRootHandle();
         const entries = await expandRootHandle(rootHandle);
         const handle = await entries.get(relativePath).handle;
         if (!handle) return fetch(event.request);
 
+        // ファイル情報を取得する
         const file = await handle.getFile();
+        const fileType = file.type || 'application/octet-stream';
+        const fileContent = await file.text();
+
+        // index.htmlの場合console.logをオーバーライドする
+        // iframe内のログを親に送信するため
+        if (relativePath.endsWith('index.html')) {
+          const script = `
+            <script>
+              (() => {
+                const overrideConsoleLog = () => {
+                  const log = console.log;
+                  console.log = (...args) => {
+                    log(...args);
+                    window.parent.postMessage({ type: 'console-log', data: args }, '*');
+                  };
+                };
+
+                if (window.console) {
+                  overrideConsoleLog();
+                } else {
+                  document.addEventListener('DOMContentLoaded', overrideConsoleLog);
+                }
+              })();
+            </script>
+          `;
+          const modifiedHtml = fileContent.replace('</head>', `${script}</head>`);
+
+          return new Response(modifiedHtml, {
+            headers: { 'Content-Type': fileType },
+          });
+        }
+
         return new Response(file, {
-          headers: { 'Content-Type': file.type || 'application/octet-stream' },
+          headers: { 'Content-Type': fileType },
         });
       } catch (error) {
         console.error('ファイル取得エラー:', error);

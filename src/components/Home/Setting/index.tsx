@@ -14,6 +14,7 @@ const Setting = () => {
   useEffect(() => {
     const appliedTheme = theme === 'os' ? getSystemTheme() : theme;
     document.body.setAttribute('data-theme', appliedTheme);
+    localStorage.setItem('lumagl-theme', appliedTheme);
   }, [theme]);
 
   return (

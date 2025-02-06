@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { SettingProvider } from '../../components/Home/Setting/context';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
+import { LogProvider } from '../../components/Home/Log/context';
 
 const Home = () => {
   const getSystemTheme = () => {
@@ -29,22 +30,24 @@ const Home = () => {
       {/* <Background /> */}
       <SettingProvider>
         <WindowProvider>
-          <ExplorerProvider>
-            <div className={styles.home}>
-              <header className={styles.header}>
-                <strong className={styles.logo}>
-                  <img src="/img/logo.svg" alt="サービスロゴ" />
-                </strong>
-                <Menu />
-              </header>
-              <main className={styles.main}>
-                <Sidebar />
-                <section className={styles.window}>
-                  <Window />
-                </section>
-              </main>
-            </div>
-          </ExplorerProvider>
+          <LogProvider>
+            <ExplorerProvider>
+              <div className={styles.home}>
+                <header className={styles.header}>
+                  <strong className={styles.logo}>
+                    <img src="/img/logo.svg" alt="サービスロゴ" />
+                  </strong>
+                  <Menu />
+                </header>
+                <main className={styles.main}>
+                  <Sidebar />
+                  <section className={styles.window}>
+                    <Window />
+                  </section>
+                </main>
+              </div>
+            </ExplorerProvider>
+          </LogProvider>
         </WindowProvider>
       </SettingProvider>
     </>

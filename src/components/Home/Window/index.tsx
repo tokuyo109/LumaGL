@@ -99,6 +99,7 @@ const Window = () => {
         extension === 'html' &&
         renderValues.buttons.push(
           <FlexLayoutIconButton
+            key={path}
             onClick={() => {
               setWindows((prev) => {
                 return new Map(prev).set(

@@ -14,6 +14,7 @@
     "@blueprintjs/icons": "^5.16.0",
     "@dnd-kit/core": "^6.2.0",
     "@heroicons/react": "^2.2.0",
+    "console-feed": "^3.6.0",
     "emmet-monaco-es": "^5.5.0",
     "flexlayout-react": "^0.8.1",
     "jszip": "^3.10.1",

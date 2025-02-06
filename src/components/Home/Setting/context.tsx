@@ -13,6 +13,13 @@ type SettingContextType = {
 
 const SettingContext = createContext<SettingContextType | undefined>(undefined);
 
+/** システムに設定されているテーマを取得する */
+// const getSystemTheme = () => {
+//   return window.matchMedia('(prefers-color-scheme: dark)').matches
+//     ? 'dark'
+//     : 'light';
+// };
+
 export const useSettingContext = () => {
   const context = useContext(SettingContext);
   if (!context) throw new Error('コンテキストが存在しません');
@@ -20,7 +27,11 @@ export const useSettingContext = () => {
 };
 
 export const SettingProvider = ({ children }: SettingProps) => {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    // const theme = localStorage.getItem('lumagl-theme');
+
+    return 'light';
+  });
 
   return (
     <SettingContext.Provider value={{ theme, setTheme }}>
