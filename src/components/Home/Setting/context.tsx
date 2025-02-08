@@ -4,7 +4,7 @@ type SettingProps = {
   children?: React.ReactNode;
 };
 
-type Theme = 'light' | 'dark' | 'os';
+type Theme = string;
 
 type SettingContextType = {
   theme: Theme;
@@ -14,11 +14,11 @@ type SettingContextType = {
 const SettingContext = createContext<SettingContextType | undefined>(undefined);
 
 /** システムに設定されているテーマを取得する */
-// const getSystemTheme = () => {
-//   return window.matchMedia('(prefers-color-scheme: dark)').matches
-//     ? 'dark'
-//     : 'light';
-// };
+const getSystemTheme = () => {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+};
 
 export const useSettingContext = () => {
   const context = useContext(SettingContext);
@@ -28,9 +28,9 @@ export const useSettingContext = () => {
 
 export const SettingProvider = ({ children }: SettingProps) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    // const theme = localStorage.getItem('lumagl-theme');
-
-    return 'light';
+    const localTheme = localStorage.getItem('lumagl-theme');
+    const theme = localTheme ? localTheme : getSystemTheme();
+    return theme;
   });
 
   return (

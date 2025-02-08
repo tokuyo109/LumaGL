@@ -18,7 +18,8 @@ const Home = () => {
   };
 
   useEffect(() => {
-    const theme = getSystemTheme();
+    const localTheme = localStorage.getItem('lumagl-theme');
+    const theme = localTheme ? localTheme : getSystemTheme();
     document.body.setAttribute('data-theme', theme);
   }, []);
 
