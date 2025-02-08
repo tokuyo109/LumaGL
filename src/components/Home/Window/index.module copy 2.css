@@ -1,0 +1,50 @@
+.window {
+  position: relative;
+  height: 100%;
+}
+
+.tab {
+  color: var(--text) !important;
+}
+
+.tab:hover {
+  color: var(-text);
+  background-color: var(--hoverd-color);
+}
+
+.tabNode {
+  height: 100%;
+  /* background-color: white; */
+}
+
+.renderZero {
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+/* ---- flexleyout-react ---- */
+:global(.flexlayout__tabset) {
+  background-color: rgba(0, 0, 0, 0);
+}
+:global(.flexlayout__tabset > div) {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+:global(.flexlayout__tab) {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+:global(.flexlayout__tab_button--selected) {
+  background-color: rgba(0, 0, 0, 0);
+  border-bottom: 1px solid var(--primary);
+}
+
+:global(.flexlayout__splitter) {
+  background-color: var(--background);
+
+  &:hover {
+    background-color: var(--primary);
+  }
+}
+/* -------------------- */

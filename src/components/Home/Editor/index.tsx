@@ -129,6 +129,20 @@ const Editor = ({ node }: Props) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (editorRef.current) {
+      monaco.editor.defineTheme('customTheme', {
+        base: theme === 'light' ? 'vs' : 'vs-dark',
+        inherit: true,
+        rules: [],
+        colors: {
+          'editor.focusBorder': '#00000000',
+        },
+      });
+      monaco.editor.setTheme('customTheme');
+    }
+  }, [theme]);
+
   return <div className={styles.editor} ref={ref}></div>;
 };
 

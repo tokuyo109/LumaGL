@@ -1,40 +1,32 @@
-import { useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
+  IJsonModel,
+  Model,
   Layout,
   TabNode,
   TabSetNode,
-  IJsonRowNode,
-  IJsonTabNode,
-  // IJsonTabSetNode,
-  ITabSetRenderValues,
-  IJsonModel,
-  Model,
-  Action,
-  Actions,
-  DockLocation,
-  Node,
   BorderNode,
+  Action,
+  ITabSetRenderValues,
+  IJsonRowNode,
+  IJsonTabSetNode,
+  Node,
 } from 'flexlayout-react';
-import { VscPlay } from 'react-icons/vsc';
+import Preview from '../Preview';
 import { useWindowContext } from './context';
 import { takeExtension, takePathname } from '../Explorer/utils';
+import { VscPlay } from 'react-icons/vsc';
 import FlexLayoutIconButton from '../../UI/FlexLayoutIconButton';
-import Preview from '../Preview';
-
 import 'flexlayout-react/style/light.css';
 import styles from './index.module.css';
 
+// レイアウトの表示設定
 const initialJsonModel: IJsonModel = {
-  global: {},
+  global: { tabEnablePopout: true },
   borders: [],
   layout: {
     type: 'row',
-    children: [
-      {
-        type: 'tabset',
-        children: [],
-      },
-    ],
+    children: [],
   },
 };
 
@@ -51,8 +43,24 @@ const collectModelKeys = (node: any, result: Set<string>) => {
 };
 
 const Window = () => {
-  const modelRef = useRef<Model>(Model.fromJson(initialJsonModel));
   const { windows, setWindows } = useWindowContext();
+  const [model, setModel] = useState<Model>(() =>
+    Model.fromJson(initialJsonModel),
+  );
+
+  /**
+   * タブの内容を生成する関数
+   */
+  const factory = (node: TabNode) => {
+    const path = node.getComponent();
+    const content = path && windows.get(path);
+    return path && content ? (
+      <div className={styles.tabNode}>
+        {/* <div>{path}</div> */}
+        {content}
+      </div>
+    ) : undefined;
+  };
 
   /**
    * タブの選択や削除などの操作に応じて実行される関数
@@ -60,7 +68,6 @@ const Window = () => {
   const handleAction = (action: Action) => {
     // 削除ボタン押下時
     if (action.type === 'FlexLayout_DeleteTab') {
-      const model = modelRef.current;
       const nodeId: string = action.data.node;
       const node: Node | undefined = model.getNodeById(nodeId);
       if (node instanceof TabNode) {
@@ -108,16 +115,8 @@ const Window = () => {
     }
   };
 
-  const factory = (node: TabNode) => {
-    const path = node.getComponent();
-    const content = path && windows.get(path);
-    return path && content ? (
-      <div className={styles.tabNode}>{content}</div>
-    ) : undefined;
-  };
-
+  // windowsが変更されたとき差分をmodelに反映させる
   useEffect(() => {
-    const model = modelRef.current;
     const jsonModel: IJsonModel = model.toJson();
     const layout: IJsonRowNode = jsonModel.layout;
 
@@ -127,28 +126,22 @@ const Window = () => {
 
     const toAdd: string[] = windowsKeys.filter((k) => !modelKeys.has(k));
     toAdd.forEach((key) => {
-      const tab: IJsonTabNode = {
-        type: 'tab',
-        name: takePathname(key),
-        component: key,
-        className: styles.tab,
+      const tabset: IJsonTabSetNode = {
+        type: 'tabset',
+        children: [
+          {
+            type: 'tab',
+            name: takePathname(key),
+            component: key,
+            className: styles.tab,
+          },
+        ],
       };
-
-      let targetId: string | null = null;
-      const active = model.getActiveTabset();
-      if (active) {
-        targetId = active.getId();
-      } else {
-        const root = model.getRoot();
-        const target = root.getChildren()[0] as TabSetNode;
-        targetId = target.getId();
-      }
-      const addAction = Actions.addNode(tab, targetId, DockLocation.CENTER, 1);
-      const tabNode = model.doAction(addAction) as TabNode;
-      const tabNodeId = tabNode.getId();
-      const selectAction = Actions.selectTab(tabNodeId);
-      model.doAction(selectAction);
+      layout.children.push(tabset);
     });
+
+    const newModel: Model = Model.fromJson(jsonModel);
+    setModel(newModel);
   }, [windows]);
 
   if (!windows.size)
@@ -156,7 +149,7 @@ const Window = () => {
   return (
     <div className={styles.window}>
       <Layout
-        model={modelRef.current}
+        model={model}
         factory={factory}
         onAction={handleAction}
         onRenderTabSet={onRenderTabSet}
