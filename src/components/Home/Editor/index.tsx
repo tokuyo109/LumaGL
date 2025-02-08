@@ -93,13 +93,15 @@ const Editor = ({ node }: Props) => {
         value: content,
         language,
         automaticLayout: true,
+        detectIndentation: false,
+        tabSize: 2,
+        insertSpaces: true,
       });
 
       // キーバインディング
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
         const indexPath = makePath(node.parentPath, 'index.html');
         if (entries.has(indexPath)) {
-          console.log('存在する');
           setWindows((prev) => {
             return new Map(prev).set(
               // node.path + ':preview',
