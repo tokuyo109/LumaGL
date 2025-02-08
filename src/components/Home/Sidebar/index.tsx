@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Setting from '../Setting';
 import Explorer from '../Explorer';
 import Log from '../Log';
@@ -12,6 +12,17 @@ import styles from './index.module.css';
 const Sidebar = () => {
   const [isOpenExplorer, setIsOpenExplorer] = useState(true);
   const { setWindows } = useWindowContext();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setIsOpenExplorer((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <aside
