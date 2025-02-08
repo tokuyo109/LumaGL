@@ -3,9 +3,10 @@ import * as monaco from 'monaco-editor';
 import { emmetHTML } from 'emmet-monaco-es';
 import './monacoWorker';
 import Preview from '../Preview';
+import { useExplorerContext } from '../Explorer/context';
 import { useWindowContext } from '../Window/context';
 import { useSettingContext } from '../Setting/context';
-import { takeExtension } from '../Explorer/utils';
+import { takeExtension, makePath } from '../Explorer/utils';
 import styles from './index.module.css';
 import { Entry } from '../Explorer/types';
 
@@ -51,7 +52,8 @@ type Props = {
 };
 
 const Editor = ({ node }: Props) => {
-  const { setWindows } = useWindowContext();
+  const { entries } = useExplorerContext();
+  const { windows, setWindows } = useWindowContext();
   const { theme } = useSettingContext();
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -95,11 +97,14 @@ const Editor = ({ node }: Props) => {
 
       // キーバインディング
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-        if (extension === 'html') {
+        const indexPath = makePath(node.parentPath, 'index.html');
+        if (entries.has(indexPath)) {
+          console.log('存在する');
           setWindows((prev) => {
             return new Map(prev).set(
-              node.path + ':preview',
-              <Preview path={node.path} update_at={Date.now()} />,
+              // node.path + ':preview',
+              'プレビュー',
+              <Preview path={indexPath} update_at={Date.now()} />,
             );
           });
         }

@@ -96,7 +96,8 @@ const Window = () => {
             onClick={() => {
               setWindows((prev) => {
                 return new Map(prev).set(
-                  path + ':preview',
+                  // path + ':preview',
+                  'プレビュー',
                   <Preview path={path} update_at={Date.now()}></Preview>,
                 );
               });

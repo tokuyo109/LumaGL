@@ -30,7 +30,7 @@ export const takeExtension = (path: string): string => {
 /**
  * パスとパスを/で繋げ、正規化する関数
  */
-const makePath = (parentPath: string, childPath: string): string => {
+export const makePath = (parentPath: string, childPath: string): string => {
   return `${parentPath}/${childPath}`.replace(/\/+/g, '/');
 };
 
