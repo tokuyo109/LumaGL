@@ -19,6 +19,45 @@ const Menu = () => {
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
   const { setEntries, refreshExplorer } = useExplorerContext();
 
+  const downloadTemplate = async (zipPath: string) => {
+    const blob: Blob = await (await fetch(zipPath)).blob();
+    // jszipを使用して解凍
+    const zip: JSZip = await JSZip.loadAsync(blob);
+
+    // ユーザーディレクトリを要求する
+    const dirHandle = await selectDirectory();
+    if (!dirHandle) return;
+
+    for (const [entryPath, entry] of Object.entries(zip.files)) {
+      if (entry.dir) continue;
+
+      const pathParts = entryPath.split('/');
+      const fileName = pathParts.pop();
+      if (!fileName) continue;
+
+      let currentDirHandle = dirHandle;
+
+      // サブディレクトリを作成する
+      for (const part of pathParts) {
+        currentDirHandle = await currentDirHandle.getDirectoryHandle(part, {
+          create: true,
+        });
+      }
+
+      // 書き込み用のハンドルを作成する
+      const handle = await currentDirHandle.getFileHandle(fileName, {
+        create: true,
+      });
+      const fileData = await entry.async('uint8array');
+      const writable = await handle.createWritable();
+      await writable.write(fileData);
+      await writable.close();
+
+      console.log('zipファイルのコピーが完了しました');
+    }
+    refreshExplorer();
+  };
+
   const menus: Node[] = [
     {
       label: 'ファイル',
@@ -49,47 +88,13 @@ const Menu = () => {
         {
           label: 'WebGL2',
           onClick: () => {
-            (async () => {
-              const blob: Blob = await (
-                await fetch('/templates/WebGL2.zip')
-              ).blob();
-              // jszipを使用して解凍
-              const zip: JSZip = await JSZip.loadAsync(blob);
-
-              // ユーザーディレクトリを要求する
-              const dirHandle = await selectDirectory();
-              if (!dirHandle) return;
-
-              for (const [entryPath, entry] of Object.entries(zip.files)) {
-                if (entry.dir) continue;
-
-                const pathParts = entryPath.split('/');
-                const fileName = pathParts.pop();
-                if (!fileName) continue;
-
-                let currentDirHandle = dirHandle;
-
-                // サブディレクトリを作成する
-                for (const part of pathParts) {
-                  currentDirHandle = await currentDirHandle.getDirectoryHandle(
-                    part,
-                    { create: true },
-                  );
-                }
-
-                // 書き込み用のハンドルを作成する
-                const handle = await currentDirHandle.getFileHandle(fileName, {
-                  create: true,
-                });
-                const fileData = await entry.async('uint8array');
-                const writable = await handle.createWritable();
-                await writable.write(fileData);
-                await writable.close();
-
-                console.log('zipファイルのコピーが完了しました');
-              }
-              refreshExplorer();
-            })();
+            downloadTemplate('/templates/WebGL2.zip');
+          },
+        },
+        {
+          label: 'Visualizer',
+          onClick: () => {
+            downloadTemplate('/templates/Visualizer.zip');
           },
         },
       ],
