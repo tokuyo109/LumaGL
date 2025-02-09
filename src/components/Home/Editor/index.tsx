@@ -45,6 +45,13 @@ const registerGLSL = () => {
       ],
     },
   });
+
+  monaco.languages.setLanguageConfiguration('glsl', {
+    comments: {
+      lineComment: '//',
+      blockComment: ['/*', '*/'],
+    },
+  });
 };
 
 type Props = {
