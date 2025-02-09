@@ -100,7 +100,7 @@ const Editor = ({ node }: Props) => {
 
       // キーバインディング
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-        const indexPath = makePath(node.parentPath, 'index.html');
+        const indexPath = makePath('/', 'index.html');
         if (entries.has(indexPath)) {
           setWindows((prev) => {
             return new Map(prev).set(

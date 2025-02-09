@@ -130,7 +130,8 @@ const Window = () => {
     toAdd.forEach((key) => {
       const tab: IJsonTabNode = {
         type: 'tab',
-        name: takePathname(key),
+        // name: takePathname(key),
+        name: key,
         component: key,
         className: styles.tab,
       };
