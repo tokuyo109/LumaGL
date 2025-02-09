@@ -97,6 +97,12 @@ const Menu = () => {
             downloadTemplate('/templates/Visualizer.zip');
           },
         },
+        {
+          label: 'RaymarchingAndVisualizer',
+          onClick: () => {
+            downloadTemplate('/templates/RaymarchingAndVisualizer.zip');
+          },
+        },
       ],
     },
   ];
