@@ -11,7 +11,7 @@ body[data-theme="light"] {
   --modal: #EDEEF2;
   --border: #C8CBD9;
   --hoverd-color: #DBDDE6;
-  --window: #ffffff;
+  --window: #EDEEF2;
 }
 
 body[data-theme="dark"] {
@@ -25,7 +25,7 @@ body[data-theme="dark"] {
   --modal: #222222;
   --border: #393939;
   --hoverd-color: #454545;
-  --window: #121212;
+  --window: #222222;
 }
 
 body {

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useSettingContext } from './context';
+import styles from './index.module.css';
 
 /** システムに設定されているテーマを取得する */
 const getSystemTheme = () => {
@@ -18,7 +19,7 @@ const Setting = () => {
   }, [theme]);
 
   return (
-    <div>
+    <div className={styles.setting}>
       <h2>テーマ設定</h2>
       <label>
         <input
