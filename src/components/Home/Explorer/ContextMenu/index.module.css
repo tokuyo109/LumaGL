@@ -1,10 +1,14 @@
 .contextMenu {
   user-select: none;
   position: absolute;
+  z-index: 999;
   
   padding: 4px;
-
   background-color: var(--menu-background);
   border: 1px solid var(--border);
   border-radius: 4px;
+
+  & > * {
+    color: var(--text);
+  }
 }
