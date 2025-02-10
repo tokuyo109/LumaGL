@@ -6,7 +6,6 @@
   cursor: pointer;
   background: none;
   border: none;
-  border-radius: 4px;
 
   & + .label {
     opacity: 0;
@@ -17,10 +16,8 @@
   }
 
   &:hover {
-    transition: background-color 0.3s;
-    background-color: var(--hoverd-color);
-
     & + .label {
+      z-index: 999;
       transition-property: opacity;
       transition-delay: 1s;
       transition-duration: 0.3s;
@@ -30,6 +27,12 @@
 }
 
 .button svg {
-  height: 16px;
+  height: 24px;
   color: var(--text);
+  border-radius: 4px;
+}
+
+.button svg:hover {
+  transition: background-color 0.3s;
+  background-color: var(--hoverd-color);
 }
