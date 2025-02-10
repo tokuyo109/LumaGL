@@ -149,20 +149,30 @@ self.addEventListener('fetch', (event) => {
           const overrideScript = `
             <script>
               (function() {
-                const originalLog = console.log;
-                console.log = function(...args) {
-                  if (window.parent && window.parent.console && window.parent.console.log) {
-                    window.parent.console.log(...args);
-                  }
-                  if (window.parent && window.parent.displayLog) {
-                    window.parent.displayLog(...args);
-                  }
-                  originalLog.apply(console, args);
-                };
+                const methods = ['log', 'warn', 'error'];
+                methods.forEach(method => {
+                  const original = console[method];
+                  console[method] = function(...args) {
+                    if (window.parent && window.parent.console && window.parent.console[method]) {
+                      window.parent.console[method](...args);
+                    }
+                    if (window.parent && window.parent.displayLog) {
+                      window.parent.displayLog(method, ...args);
+                    }
+                    original.apply(console, args);
+                  };
+                });
+                window.addEventListener('error', (e) => {
+                  console.error('Global error:', e.message, e.error);
+                });
+                window.addEventListener('unhandledrejection', (e) => {
+                  console.error('Unhandled rejection:', e.reason);
+                });
+                console.log('index.htmlが読み込まれました');
               })();
             </script>
           `;
-          const modifiedHtml = fileContent.replace('</head>', `${overrideScript}</head>`);
+          const modifiedHtml = fileContent.replace('<head>', `<head>${overrideScript}`);
 
           return new Response(modifiedHtml, {
             headers: { 'Content-Type': fileType },
