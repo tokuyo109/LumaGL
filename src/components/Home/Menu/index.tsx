@@ -28,10 +28,16 @@ const Menu = () => {
     const dirHandle = await selectDirectory();
     if (!dirHandle) return;
 
+    // console.log(dirHandle.name);
+    // console.log(Object.entries(zip.files));
     for (const [entryPath, entry] of Object.entries(zip.files)) {
       if (entry.dir) continue;
 
       const pathParts = entryPath.split('/');
+
+      // 中のファイルやサブディレクトリのみが展開されるようにする
+      pathParts.shift();
+
       const fileName = pathParts.pop();
       if (!fileName) continue;
 
