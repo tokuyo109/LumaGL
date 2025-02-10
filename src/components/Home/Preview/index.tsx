@@ -10,9 +10,9 @@ const Preview = ({ path, update_at }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
-    if (iframeRef.current) {
-      iframeRef.current.src = 'entries' + path;
-    }
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    iframe.src = 'entries' + path;
   }, [update_at]);
 
   return (

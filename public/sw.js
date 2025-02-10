@@ -144,41 +144,25 @@ self.addEventListener('fetch', (event) => {
         const fileType = file.type || 'application/octet-stream';
         const fileContent = await file.text();
 
-        // index.html の場合 console.log をオーバーライド
+        // index.htmlの場合console.logをオーバーライド
         if (relativePath.endsWith('index.html')) {
-          const script = `
+          const overrideScript = `
             <script>
-              (() => {
-                const serializeData = (args) => args.map(arg => {
-                  if (arg instanceof HTMLElement) {
-                    return \`<\${arg.tagName.toLowerCase()} id="\${arg.id}" class="\${arg.className}">\`;
+              (function() {
+                const originalLog = console.log;
+                console.log = function(...args) {
+                  if (window.parent && window.parent.console && window.parent.console.log) {
+                    window.parent.console.log(...args);
                   }
-                  if (arg instanceof File) {
-                    return \`[File: \${arg.name}, size: \${arg.size} bytes]\`;
+                  if (window.parent && window.parent.displayLog) {
+                    window.parent.displayLog(...args);
                   }
-                  if (typeof arg === 'function') {
-                    return \`[Function: \${arg.name || 'anonymous'}]\`;
-                  }
-                  try {
-                    return JSON.stringify(arg, null, 2);
-                  } catch {
-                    return '[Uncloneable Object]';
-                  }
-                });
-
-                const overrideConsole = (method) => {
-                  const original = console[method];
-                  console[method] = (...args) => {
-                    original(...args);
-                    window.parent.postMessage({ type: 'console-log', method, data: serializeData(args) }, '*');
-                  };
+                  originalLog.apply(console, args);
                 };
-
-                ['log', 'warn', 'error'].forEach(overrideConsole);
               })();
             </script>
           `;
-          const modifiedHtml = fileContent.replace('</head>', `${script}</head>`);
+          const modifiedHtml = fileContent.replace('</head>', `${overrideScript}</head>`);
 
           return new Response(modifiedHtml, {
             headers: { 'Content-Type': fileType },
