@@ -12,6 +12,7 @@ body[data-theme="light"] {
   --border: #C8CBD9;
   --hoverd-color: #DBDDE6;
   --window: #EDEEF2;
+  --text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.6);
 }
 
 body[data-theme="dark"] {
@@ -26,6 +27,8 @@ body[data-theme="dark"] {
   --border: #393939;
   --hoverd-color: #454545;
   --window: #222222;
+  --ambient-window: rgba(34, 34, 34, 0.3);
+  --text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.8);
 }
 
 body {
@@ -34,6 +37,7 @@ body {
   font-size: 15px;
   font-family: Arial, sans-serif;
   transition: background-color 0.3s, color 0.3s;
+  /* text-shadow: var(--text-shadow); */
 }
 
 *,

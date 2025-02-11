@@ -1,14 +1,23 @@
-import { useState, createContext, useContext } from 'react';
+import {
+  useState,
+  createContext,
+  useContext,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 
 type SettingProps = {
   children?: React.ReactNode;
 };
 
 type Theme = string;
+type Ambient = boolean;
 
 type SettingContextType = {
   theme: Theme;
-  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
+  setTheme: Dispatch<SetStateAction<Theme>>;
+  isAmbient: Ambient;
+  setIsAmbient: Dispatch<SetStateAction<Ambient>>;
 };
 
 const SettingContext = createContext<SettingContextType | undefined>(undefined);
@@ -32,9 +41,12 @@ export const SettingProvider = ({ children }: SettingProps) => {
     const theme = localTheme ? localTheme : getSystemTheme();
     return theme;
   });
+  const [isAmbient, setIsAmbient] = useState(false);
 
   return (
-    <SettingContext.Provider value={{ theme, setTheme }}>
+    <SettingContext.Provider
+      value={{ theme, setTheme, isAmbient, setIsAmbient }}
+    >
       {children}
     </SettingContext.Provider>
   );

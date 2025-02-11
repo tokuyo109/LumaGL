@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 // import Background from '../../components/Home/Background';
+// import Ambient from '../../components/Home/Ambient';
 import Menu from '../../components/Home/Menu';
 import Sidebar from '../../components/Home/Sidebar';
 import Window from '../../components/Home/Window';
@@ -9,6 +10,7 @@ import { SettingProvider } from '../../components/Home/Setting/context';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
 import { LogProvider } from '../../components/Home/Log/context';
+// import { AmbientProvider } from '../../components/Home/Ambient/context';
 
 const Home = () => {
   const getSystemTheme = () => {
@@ -28,11 +30,12 @@ const Home = () => {
       <Helmet>
         <title>LumaGL - WebGL Editor</title>
       </Helmet>
-      {/* <Background /> */}
       <SettingProvider>
         <WindowProvider>
           <LogProvider>
             <ExplorerProvider>
+              {/* <AmbientProvider> */}
+              {/* <Ambient /> */}
               <div className={styles.home}>
                 <header className={styles.header}>
                   <strong className={styles.logo}>
@@ -47,6 +50,7 @@ const Home = () => {
                   </section>
                 </main>
               </div>
+              {/* </AmbientProvider> */}
             </ExplorerProvider>
           </LogProvider>
         </WindowProvider>

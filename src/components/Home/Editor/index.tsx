@@ -88,7 +88,7 @@ const Editor = ({ node }: Props) => {
         inherit: true,
         rules: [],
         colors: {
-          // 'editor.background': '#00000000',
+          'editor.background': '#00000000',
           'editor.focusBorder': '#00000000',
         },
       });

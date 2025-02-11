@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { useSettingContext } from '../Setting/context';
+// import { useAmbientContext } from '../Ambient/context';
 import styles from './index.module.css';
 
 type Props = {
@@ -9,35 +9,18 @@ type Props = {
 
 const Preview = ({ path, update_at }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { isAmbient } = useSettingContext();
+  const { setIframeRef } = useAmbientContext();
+
+  useEffect(() => {
+    // このタイミングで Context に iframeRef を登録
+    setIframeRef(iframeRef);
+  }, [iframeRef, setIframeRef]);
 
   // ブラウザエディタ編集時にupdate_atが変更される
   // iframe.srcにプロパティを再設定することでプレビューを更新する
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
-
-    if (isAmbient) {
-      console.log(isAmbient);
-      const handleLoad = () => {
-        const contentDocument = iframe.contentDocument;
-        const canvas = contentDocument?.querySelector('canvas');
-        if (!canvas) return;
-
-        const canvasTo = canvasRef.current;
-        const ctx = canvasTo?.getContext('2d');
-
-        const animate = () => {
-          requestAnimationFrame(animate);
-          if (canvas.width === 0 || canvas.height === 0) return;
-          ctx?.clearRect(0, 0, canvas.width, canvas.height);
-          ctx?.drawImage(canvas, 0, 0);
-        };
-        animate();
-      };
-      iframe.addEventListener('load', handleLoad);
-    }
     iframe.src = 'entries' + path;
   }, [update_at]);
 
@@ -50,7 +33,6 @@ const Preview = ({ path, update_at }: Props) => {
         src={'entries' + path}
         style={{ width: '100%', height: '100%', border: 'none' }}
       ></iframe>
-      <canvas ref={canvasRef} className={styles.ambient}></canvas>
     </div>
   );
 };

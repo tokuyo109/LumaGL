@@ -10,7 +10,7 @@ const getSystemTheme = () => {
 };
 
 const Setting = () => {
-  const { theme, setTheme } = useSettingContext();
+  const { theme, setTheme, isAmbient, setIsAmbient } = useSettingContext();
 
   useEffect(() => {
     const appliedTheme = theme === 'os' ? getSystemTheme() : theme;
@@ -48,6 +48,15 @@ const Setting = () => {
         />
         システム設定
       </label>
+
+      <h2>アンビエントモード</h2>
+      <button
+        onClick={() => {
+          setIsAmbient((prev) => !prev);
+        }}
+      >
+        {isAmbient ? '無効' : '有効'}
+      </button>
     </div>
   );
 };
