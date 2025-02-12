@@ -1,6 +1,3 @@
-const INDEXED_DB_NAME = 'entries';
-const INDEXED_DB_STORE_NAME = 'store';
-
 const DB_NAME = 'lumagl-db';
 const STORE_NAME = 'lumagl-entries-store';
 

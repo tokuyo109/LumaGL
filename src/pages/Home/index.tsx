@@ -1,6 +1,4 @@
 import { Helmet } from 'react-helmet-async';
-// import Background from '../../components/Home/Background';
-// import Ambient from '../../components/Home/Ambient';
 import Menu from '../../components/Home/Menu';
 import Sidebar from '../../components/Home/Sidebar';
 import Window from '../../components/Home/Window';
@@ -10,15 +8,17 @@ import { SettingProvider } from '../../components/Home/Setting/context';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
 import { LogProvider } from '../../components/Home/Log/context';
-// import { AmbientProvider } from '../../components/Home/Ambient/context';
+
+/**
+ * ブラウザのデフォルトテーマを取得する
+ */
+const getSystemTheme = () => {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+};
 
 const Home = () => {
-  const getSystemTheme = () => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
-  };
-
   useEffect(() => {
     const localTheme = localStorage.getItem('lumagl-theme');
     const theme = localTheme ? localTheme : getSystemTheme();
@@ -34,8 +34,6 @@ const Home = () => {
         <WindowProvider>
           <LogProvider>
             <ExplorerProvider>
-              {/* <AmbientProvider> */}
-              {/* <Ambient /> */}
               <div className={styles.home}>
                 <header className={styles.header}>
                   <strong className={styles.logo}>
@@ -50,7 +48,6 @@ const Home = () => {
                   </section>
                 </main>
               </div>
-              {/* </AmbientProvider> */}
             </ExplorerProvider>
           </LogProvider>
         </WindowProvider>

@@ -60,7 +60,7 @@ type Props = {
 
 const Editor = ({ node }: Props) => {
   const { entries } = useExplorerContext();
-  const { windows, setWindows } = useWindowContext();
+  const { setWindows } = useWindowContext();
   const { theme } = useSettingContext();
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
