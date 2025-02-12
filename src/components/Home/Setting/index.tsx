@@ -42,6 +42,15 @@ const Setting = () => {
       <label>
         <input
           type="radio"
+          value="ambient"
+          checked={theme === 'ambient'}
+          onChange={() => setTheme('ambient')}
+        />
+        アンビエント
+      </label>
+      <label>
+        <input
+          type="radio"
           value="os"
           checked={theme === 'os'}
           onChange={() => setTheme('os')}
@@ -49,14 +58,14 @@ const Setting = () => {
         システム設定
       </label>
 
-      <h2>アンビエントモード</h2>
+      {/* <h2>アンビエントモード</h2>
       <button
         onClick={() => {
           setIsAmbient((prev) => !prev);
         }}
       >
         {isAmbient ? '無効' : '有効'}
-      </button>
+      </button> */}
     </div>
   );
 };

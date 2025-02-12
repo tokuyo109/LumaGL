@@ -35,3 +35,7 @@
 body[data-theme="dark"] .logo > img {
   content: url('/img/logo_dark.svg');
 }
+
+body[data-theme="ambient"] .logo > img {
+  content: url('/img/logo_dark.svg');
+}

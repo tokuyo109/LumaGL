@@ -10,7 +10,7 @@ type Props = {
 const Preview = ({ path, update_at }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { isAmbient } = useSettingContext();
+  const { theme, isAmbient } = useSettingContext();
 
   // ブラウザエディタ編集時にupdate_atが変更される
   // iframe.srcにプロパティを再設定することでプレビューを更新する
@@ -18,7 +18,7 @@ const Preview = ({ path, update_at }: Props) => {
     const iframe = iframeRef.current;
     if (!iframe) return;
 
-    if (isAmbient) {
+    if (theme === 'ambient') {
       console.log(isAmbient);
       const handleLoad = () => {
         const contentDocument = iframe.contentDocument;

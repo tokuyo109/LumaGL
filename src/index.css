@@ -31,6 +31,22 @@ body[data-theme="dark"] {
   --text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.8);
 }
 
+body[data-theme="ambient"] {
+  --primary: #5F5DFF;
+  --secondary: #8B95FF;
+  --shadow: rgba(179, 178, 185, 0.2);
+  --text: #DBDDE6;
+  --secondary-text: #4F4F4F;
+  --background: #121212;
+  --menu-background: #3D3D3D;
+  --modal: #222222;
+  --border: #393939;
+  --hoverd-color: #454545;
+  --window: #222222;
+  --ambient-window: rgba(34, 34, 34, 0.3);
+  --text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.8);
+}
+
 body {
   background-color: var(--background);
   color: var(--text);
