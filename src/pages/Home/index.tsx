@@ -8,6 +8,7 @@ import { SettingProvider } from '../../components/Home/Setting/context';
 import { ExplorerProvider } from '../../components/Home/Explorer/context';
 import { WindowProvider } from '../../components/Home/Window/context';
 import { LogProvider } from '../../components/Home/Log/context';
+import { SidebarProvider } from '../../components/Home/Sidebar/context';
 
 /**
  * ブラウザのデフォルトテーマを取得する
@@ -31,26 +32,28 @@ const Home = () => {
         <title>LumaGL - WebGL Editor</title>
       </Helmet>
       <SettingProvider>
-        <WindowProvider>
-          <LogProvider>
-            <ExplorerProvider>
-              <div className={styles.home}>
-                <header className={styles.header}>
-                  <strong className={styles.logo}>
-                    <img src="/img/logo.svg" alt="サービスロゴ" />
-                  </strong>
-                  <Menu />
-                </header>
-                <main className={styles.main}>
-                  <Sidebar />
-                  <section className={styles.window}>
-                    <Window />
-                  </section>
-                </main>
-              </div>
-            </ExplorerProvider>
-          </LogProvider>
-        </WindowProvider>
+        <SidebarProvider>
+          <WindowProvider>
+            <LogProvider>
+              <ExplorerProvider>
+                <div className={styles.home}>
+                  <header className={styles.header}>
+                    <strong className={styles.logo}>
+                      <img src="/img/logo.svg" alt="サービスロゴ" />
+                    </strong>
+                    <Menu />
+                  </header>
+                  <main className={styles.main}>
+                    <Sidebar />
+                    <section className={styles.window}>
+                      <Window />
+                    </section>
+                  </main>
+                </div>
+              </ExplorerProvider>
+            </LogProvider>
+          </WindowProvider>
+        </SidebarProvider>
       </SettingProvider>
     </>
   );

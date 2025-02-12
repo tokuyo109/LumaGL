@@ -1,0 +1,10 @@
+.sidebarToggleButton {
+  cursor: pointer;
+  background: none;
+  border: none;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  padding: 2px;
+  transition: background-color 0.2s;
+}

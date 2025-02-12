@@ -5,7 +5,6 @@ import {
   TabSetNode,
   IJsonRowNode,
   IJsonTabNode,
-  // IJsonTabSetNode,
   ITabSetRenderValues,
   IJsonModel,
   Model,
@@ -17,7 +16,8 @@ import {
 } from 'flexlayout-react';
 import { VscPlay } from 'react-icons/vsc';
 import { useWindowContext } from './context';
-import { takeExtension, takePathname } from '../Explorer/utils';
+import { useSidebarContext } from '../Sidebar/context';
+import { takeExtension } from '../Explorer/utils';
 import FlexLayoutIconButton from '../../UI/FlexLayoutIconButton';
 import Preview from '../Preview';
 
@@ -50,9 +50,24 @@ const collectModelKeys = (node: any, result: Set<string>) => {
   }
 };
 
+/** windowsのキーを用いてTabNodeを検索する関数 */
+const findTabNodeByKey = (node: Node, key: string): TabNode | undefined => {
+  if (node instanceof TabNode && node.getComponent() === key) {
+    return node;
+  }
+
+  if ('getChildren' in node) {
+    for (const child of node.getChildren()) {
+      const found = findTabNodeByKey(child, key);
+      if (found) return found;
+    }
+  }
+};
+
 const Window = () => {
   const modelRef = useRef<Model>(Model.fromJson(initialJsonModel));
   const { windows, setWindows } = useWindowContext();
+  const { setIsOpenConsole, setIsOpenSetting } = useSidebarContext();
 
   /**
    * タブの選択や削除などの操作に応じて実行される関数
@@ -65,12 +80,19 @@ const Window = () => {
       const node: Node | undefined = model.getNodeById(nodeId);
       if (node instanceof TabNode) {
         const path: string | undefined = node.getComponent();
-        path &&
+        if (path) {
           setWindows((prev) => {
             const newMap = new Map(prev);
             newMap.delete(path);
             return newMap;
           });
+
+          if (path === '設定画面') {
+            setIsOpenSetting(false);
+          } else if (path === 'コンソール') {
+            setIsOpenConsole(false);
+          }
+        }
       }
     }
     return action;
@@ -96,7 +118,6 @@ const Window = () => {
             onClick={() => {
               setWindows((prev) => {
                 return new Map(prev).set(
-                  // path + ':preview',
                   'プレビュー',
                   <Preview path={path} update_at={Date.now()}></Preview>,
                 );
@@ -130,7 +151,6 @@ const Window = () => {
     toAdd.forEach((key) => {
       const tab: IJsonTabNode = {
         type: 'tab',
-        // name: takePathname(key),
         name: key,
         component: key,
         className: styles.tab,
@@ -150,6 +170,15 @@ const Window = () => {
       const tabNodeId = tabNode.getId();
       const selectAction = Actions.selectTab(tabNodeId);
       model.doAction(selectAction);
+    });
+
+    const toRemove = [...modelKeys].filter((k) => !windowsKeys.includes(k));
+    toRemove.forEach((key) => {
+      const root = model.getRoot();
+      const nodeToRemove = findTabNodeByKey(root, key);
+      if (nodeToRemove) {
+        model.doAction(Actions.deleteTab(nodeToRemove.getId()));
+      }
     });
   }, [windows]);
 

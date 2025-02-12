@@ -1,28 +1,26 @@
-import { useState, useEffect } from 'react';
 import Setting from '../Setting';
 import Explorer from '../Explorer';
 import Log from '../Log';
-import IconButton from '../../UI/IconButton';
+import SidebarToggleButton from './SidebarToggleButton';
+
 import { useWindowContext } from '../Window/context';
+import { useSidebarContext } from './context';
 
 import { VscFolder, VscInfo } from 'react-icons/vsc';
 import { HiOutlineCommandLine } from 'react-icons/hi2';
+
 import styles from './index.module.css';
 
 const Sidebar = () => {
-  const [isOpenExplorer, setIsOpenExplorer] = useState(true);
+  const {
+    isOpenExplorer,
+    setIsOpenExplorer,
+    isOpenConsole,
+    setIsOpenConsole,
+    isOpenSetting,
+    setIsOpenSetting,
+  } = useSidebarContext();
   const { setWindows } = useWindowContext();
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        setIsOpenExplorer((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   return (
     <aside
@@ -33,45 +31,64 @@ const Sidebar = () => {
     >
       <div className={styles.toolbar}>
         <div>
-          <button
-            style={{
-              backgroundColor: isOpenExplorer
-                ? 'var(--hoverd-color)'
-                : 'transparent',
-              // border: isOpenExplorer ? '1px solid #C8CBD9' : 'transparent',
-            }}
-            className={styles.explorerToggleButton}
+          <SidebarToggleButton
+            isOpen={isOpenExplorer}
             onClick={() => {
               setIsOpenExplorer((prev) => !prev);
             }}
           >
             <VscFolder />
-          </button>
+          </SidebarToggleButton>
         </div>
         <div>
-          <IconButton
-            label="コンソール"
+          <SidebarToggleButton
+            isOpen={isOpenConsole}
             onClick={() => {
-              setWindows((prev) =>
-                new Map(prev).set('コンソール', <Log></Log>),
-              );
+              // 開いているとき閉じる
+              if (isOpenConsole) {
+                setWindows((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete('コンソール');
+                  return newMap;
+                });
+                setIsOpenConsole(false);
+
+                // 閉じているとき開く
+              } else {
+                setWindows((prev) =>
+                  new Map(prev).set('コンソール', <Log></Log>),
+                );
+                setIsOpenConsole(true);
+              }
             }}
           >
             <HiOutlineCommandLine />
-          </IconButton>
-          <IconButton
-            label="設定"
-            onClick={() =>
-              setWindows((prev) =>
-                new Map(prev).set('設定画面', <Setting></Setting>),
-              )
-            }
+          </SidebarToggleButton>
+          <SidebarToggleButton
+            isOpen={isOpenSetting}
+            onClick={() => {
+              // 開いているとき閉じる
+              if (isOpenSetting) {
+                setWindows((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete('設定画面');
+                  return newMap;
+                });
+                setIsOpenSetting(false);
+
+                // 閉じているとき開く
+              } else {
+                setWindows((prev) =>
+                  new Map(prev).set('設定画面', <Setting></Setting>),
+                );
+                setIsOpenSetting(true);
+              }
+            }}
           >
             <VscInfo />
-          </IconButton>
+          </SidebarToggleButton>
         </div>
       </div>
-
       <div
         style={{
           display: isOpenExplorer ? 'block' : 'none',
