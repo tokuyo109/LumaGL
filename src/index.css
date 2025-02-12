@@ -45,6 +45,10 @@ body[data-theme="ambient"] {
   --window: #222222;
   --ambient-window: rgba(34, 34, 34, 0.3);
   --text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.8);
+
+  & * {
+    text-shadow: 1px 1px 3px rgba(0,0,0,.5);
+  }
 }
 
 body {
