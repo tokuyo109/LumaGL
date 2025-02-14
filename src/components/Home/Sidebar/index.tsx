@@ -26,13 +26,14 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (isOpenConsole) {
-      setWindows((prev) => new Map(prev).set('コンソール', <Log></Log>));
-    } else {
       setWindows((prev) => {
         const newMap = new Map(prev);
         newMap.delete('コンソール');
         return newMap;
       });
+      // 閉じているとき開く
+    } else {
+      setWindows((prev) => new Map(prev).set('コンソール', <Log></Log>));
     }
   }, [isOpenConsole]);
 
