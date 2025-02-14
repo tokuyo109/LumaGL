@@ -25,12 +25,13 @@ const Sidebar = () => {
   const { setWindows } = useWindowContext();
 
   useEffect(() => {
-    if (!isOpenConsole) {
+    if (isOpenConsole) {
       setWindows((prev) => {
         const newMap = new Map(prev);
         newMap.delete('コンソール');
         return newMap;
       });
+      // 閉じているとき開く
     } else {
       setWindows((prev) => new Map(prev).set('コンソール', <Log></Log>));
     }
@@ -58,8 +59,10 @@ const Sidebar = () => {
           <SidebarToggleButton
             isOpen={isOpenConsole}
             onClick={() => {
+              // 開いているとき閉じる
               if (isOpenConsole) {
                 setIsOpenConsole(false);
+                // 閉じているとき開く
               } else {
                 setIsOpenConsole(true);
               }
