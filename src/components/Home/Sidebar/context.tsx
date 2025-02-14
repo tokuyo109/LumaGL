@@ -44,7 +44,6 @@ export const SidebarProvider = ({ children }: SidebarProps) => {
 
       // Ctrl + @
       if ((e.ctrlKey || e.metaKey) && e.code === 'BracketLeft') {
-        console.log('Ctrl + @');
         e.preventDefault();
         setIsOpenConsole((prev) => !prev);
       }
