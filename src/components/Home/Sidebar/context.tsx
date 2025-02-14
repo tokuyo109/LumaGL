@@ -36,9 +36,17 @@ export const SidebarProvider = ({ children }: SidebarProps) => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl + b
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         setIsOpenExplorer((prev) => !prev);
+      }
+
+      // Ctrl + @
+      if ((e.ctrlKey || e.metaKey) && e.code === 'BracketLeft') {
+        console.log('Ctrl + @');
+        e.preventDefault();
+        setIsOpenConsole((prev) => !prev);
       }
     };
 

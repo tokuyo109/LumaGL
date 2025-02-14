@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import Setting from '../Setting';
 import Explorer from '../Explorer';
 import Log from '../Log';
@@ -21,6 +23,19 @@ const Sidebar = () => {
     setIsOpenSetting,
   } = useSidebarContext();
   const { setWindows } = useWindowContext();
+
+  useEffect(() => {
+    if (isOpenConsole) {
+      setWindows((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete('コンソール');
+        return newMap;
+      });
+      // 閉じているとき開く
+    } else {
+      setWindows((prev) => new Map(prev).set('コンソール', <Log></Log>));
+    }
+  }, [isOpenConsole]);
 
   return (
     <aside
@@ -46,18 +61,9 @@ const Sidebar = () => {
             onClick={() => {
               // 開いているとき閉じる
               if (isOpenConsole) {
-                setWindows((prev) => {
-                  const newMap = new Map(prev);
-                  newMap.delete('コンソール');
-                  return newMap;
-                });
                 setIsOpenConsole(false);
-
                 // 閉じているとき開く
               } else {
-                setWindows((prev) =>
-                  new Map(prev).set('コンソール', <Log></Log>),
-                );
                 setIsOpenConsole(true);
               }
             }}
