@@ -20,6 +20,9 @@ import {
 import { TreeNode } from './types';
 import styles from './index.module.css';
 
+/**
+ * entriesをアルファベットの昇順に並び替える関数
+ */
 const sortEntries = (entries: Map<string, TreeNode>): Map<string, TreeNode> => {
   const sortedArray = Array.from(entries.entries()).sort(
     ([_keyA, a], [_keyB, b]) => {
@@ -35,14 +38,14 @@ const sortEntries = (entries: Map<string, TreeNode>): Map<string, TreeNode> => {
 
 const Explorer = () => {
   const { entries, setEntries, refreshExplorer } = useExplorerContext();
-
   const [root, setRoot] = useState<TreeNode | undefined>(undefined);
 
-  // DnD
+  // 5px以上でドラッグ判定
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
   );
 
+  // IndexedDBからルートディレクトリを取得して展開する
   useEffect(() => {
     (async () => {
       const entries = await getAllFromIndexedDB();
@@ -50,22 +53,13 @@ const Explorer = () => {
     })();
   }, []);
 
-  // entriesの更新をUIと同期する
+  // entriesの更新に伴ってUI生成用のツリー構造を作成する
   useEffect(() => {
     const sortedEntries = sortEntries(entries);
     setRoot(buildTree(sortedEntries));
   }, [entries]);
 
-  const handleClick = async () => {
-    const dirHandle = await selectDirectory();
-    if (!dirHandle) return;
-
-    await registerRootDirectory(dirHandle);
-
-    const updateEntreis = await getAllFromIndexedDB();
-    updateEntreis && setEntries(updateEntreis);
-  };
-
+  // ドラッグ終了時の処理
   const handleDragEnd = async (event: DragEndEvent) => {
     try {
       const { active, over } = event;
@@ -98,6 +92,24 @@ const Explorer = () => {
     }
   };
 
+  const SelectDirectoryButton = () => {
+    const handleClick = async () => {
+      const dirHandle = await selectDirectory();
+      if (!dirHandle) return;
+
+      await registerRootDirectory(dirHandle);
+
+      const updateEntreis = await getAllFromIndexedDB();
+      updateEntreis && setEntries(updateEntreis);
+    };
+
+    return (
+      <button className={styles.selectDirectory} onClick={() => handleClick()}>
+        ディレクトリを選択
+      </button>
+    );
+  };
+
   const ExplorerItem = (node: TreeNode) => {
     if (node.type === 'directory') {
       const DirectoryComponent =
@@ -120,12 +132,7 @@ const Explorer = () => {
           <ul>{ExplorerItem(root)}</ul>
         </DndContext>
       ) : (
-        <button
-          className={styles.selectDirectory}
-          onClick={() => handleClick()}
-        >
-          ディレクトリを選択
-        </button>
+        <SelectDirectoryButton />
       )}
     </div>
   );
