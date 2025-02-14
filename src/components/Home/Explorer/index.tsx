@@ -16,7 +16,6 @@ import {
   useSensor,
   useSensors,
   MouseSensor,
-  // DragOverlay,
 } from '@dnd-kit/core';
 import { TreeNode } from './types';
 import styles from './index.module.css';
@@ -38,8 +37,7 @@ const sortEntries = (entries: Map<string, TreeNode>): Map<string, TreeNode> => {
 };
 
 const Explorer = () => {
-  const { entries, setEntries, selectEntries, refreshExplorer } =
-    useExplorerContext();
+  const { entries, setEntries, refreshExplorer } = useExplorerContext();
   const [root, setRoot] = useState<TreeNode | undefined>(undefined);
 
   // 5px以上でドラッグ判定
@@ -60,10 +58,6 @@ const Explorer = () => {
     const sortedEntries = sortEntries(entries);
     setRoot(buildTree(sortedEntries));
   }, [entries]);
-
-  useEffect(() => {
-    console.log(selectEntries);
-  }, [selectEntries]);
 
   // ドラッグ終了時の処理
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -136,11 +130,6 @@ const Explorer = () => {
       {root ? (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <ul>{ExplorerItem(root)}</ul>
-          {/* <DragOverlay>
-            {Object.values(selectEntries).map((entry) => {
-              return <li>{entry.name}</li>;
-            })}
-          </DragOverlay> */}
         </DndContext>
       ) : (
         <SelectDirectoryButton />
