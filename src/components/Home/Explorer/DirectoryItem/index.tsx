@@ -29,7 +29,13 @@ type Props = {
 };
 
 const DirectoryItem = ({ node, children }: Props) => {
-  const { entries, refreshExplorer } = useExplorerContext();
+  const {
+    entries,
+    setSelectEntries,
+    refreshExplorer,
+    isSelectEntry,
+    toggleSelectEntry,
+  } = useExplorerContext();
   const { position, contextMenuRef, showContextMenu, hideContextMenu } =
     useContextMenu();
 
@@ -45,9 +51,10 @@ const DirectoryItem = ({ node, children }: Props) => {
     useDirectoryState();
 
   // ドラッグ用プロパティ
-  const { setNodeRef, attributes, listeners, transform } = useDraggable({
-    id: node.path,
-  });
+  const { setNodeRef, attributes, listeners, transform, isDragging } =
+    useDraggable({
+      id: node.path,
+    });
 
   const style = transform
     ? `translate(${transform.x}px, ${transform.y}px)`
@@ -95,8 +102,11 @@ const DirectoryItem = ({ node, children }: Props) => {
           style={{
             transform: style,
             height: 'fit-content',
+            backgroundColor: isSelectEntry(node.path) ? 'gray' : 'transparent',
+            cursor: isDragging ? 'grabbing' : 'grab',
           }}
           onClick={(_event: React.MouseEvent) => {
+            toggleSelectEntry(node);
             toggleDirectory(node.path);
           }}
           onContextMenu={showContextMenu}

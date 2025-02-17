@@ -1,5 +1,11 @@
 // アプリケーション全体で共有する必要があるロジックや状態を実装する
-import { useState, createContext, useContext } from 'react';
+import {
+  useState,
+  createContext,
+  useContext,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 import { getAllFromIndexedDB } from './utils';
 import { TreeNode } from './types';
 
@@ -11,6 +17,10 @@ type ExplorerProps = {
 type ExplorerContextType = {
   entries: Map<string, TreeNode>;
   setEntries: (value: Map<string, TreeNode>) => void;
+  selectEntries: Map<string, TreeNode>;
+  setSelectEntries: Dispatch<SetStateAction<Map<string, TreeNode>>>;
+  isSelectEntry: (path: string) => boolean;
+  toggleSelectEntry: (node: TreeNode) => void;
   refreshExplorer: () => void;
 };
 
@@ -32,7 +42,9 @@ export const useExplorerContext = (): ExplorerContextType => {
  * これより下に存在するコンポーネントはこのコンテキストの値を利用することができる
  */
 export const ExplorerProvider = ({ children }: ExplorerProps) => {
-  // ファイル・ディレクトリの一覧
+  const [selectEntries, setSelectEntries] = useState<Map<string, TreeNode>>(
+    new Map(),
+  );
   const [entries, setEntries] = useState<Map<string, TreeNode>>(new Map());
 
   const refreshExplorer = async () => {
@@ -40,8 +52,40 @@ export const ExplorerProvider = ({ children }: ExplorerProps) => {
     setEntries(result);
   };
 
+  /**
+   * 要素が選択されているかを真偽値で返す関数
+   */
+  const isSelectEntry = (path: string) => {
+    return selectEntries.has(path);
+  };
+
+  /**
+   * 要素の選択状態を切り替える
+   */
+  const toggleSelectEntry = (node: TreeNode) => {
+    setSelectEntries((prev) => {
+      const newMap = new Map(prev);
+      if (isSelectEntry(node.path)) {
+        newMap.delete(node.path);
+      } else {
+        newMap.set(node.path, node);
+      }
+      return newMap;
+    });
+  };
+
   return (
-    <ExplorerContext.Provider value={{ entries, setEntries, refreshExplorer }}>
+    <ExplorerContext.Provider
+      value={{
+        entries,
+        setEntries,
+        selectEntries,
+        setSelectEntries,
+        refreshExplorer,
+        isSelectEntry,
+        toggleSelectEntry,
+      }}
+    >
       {children}
     </ExplorerContext.Provider>
   );
