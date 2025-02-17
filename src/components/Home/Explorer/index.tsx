@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useExplorerContext } from './context';
 import {
   selectDirectory,
-  buildTree,
   moveEntry,
   registerRootDirectory,
   getAllFromIndexedDB,
@@ -21,49 +19,13 @@ import {
 import { TreeNode } from './types';
 import styles from './index.module.css';
 
-/**
- * entriesをアルファベットの昇順に並び替える関数
- */
-const sortEntries = (entries: Map<string, TreeNode>): Map<string, TreeNode> => {
-  const sortedArray = Array.from(entries.entries()).sort(
-    ([_keyA, a], [_keyB, b]) => {
-      if (a.type === 'directory' && b.type === 'file') return -1;
-      if (a.type === 'file' && b.type === 'directory') return 1;
-
-      return a.name.localeCompare(b.name);
-    },
-  );
-
-  return new Map(sortedArray);
-};
-
 const Explorer = () => {
-  const { entries, setEntries, selectEntries, refreshExplorer } =
-    useExplorerContext();
-  const [root, setRoot] = useState<TreeNode | undefined>(undefined);
+  const { entries, setEntries, root, refreshExplorer } = useExplorerContext();
 
   // 5px以上でドラッグ判定
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
   );
-
-  // IndexedDBからルートディレクトリを取得して展開する
-  useEffect(() => {
-    (async () => {
-      const entries = await getAllFromIndexedDB();
-      setEntries(entries);
-    })();
-  }, []);
-
-  // entriesの更新に伴ってUI生成用のツリー構造を作成する
-  useEffect(() => {
-    const sortedEntries = sortEntries(entries);
-    setRoot(buildTree(sortedEntries));
-  }, [entries]);
-
-  useEffect(() => {
-    console.log(selectEntries);
-  }, [selectEntries]);
 
   // ドラッグ終了時の処理
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -136,11 +98,6 @@ const Explorer = () => {
       {root ? (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <ul>{ExplorerItem(root)}</ul>
-          {/* <DragOverlay>
-            {Object.values(selectEntries).map((entry) => {
-              return <li>{entry.name}</li>;
-            })}
-          </DragOverlay> */}
         </DndContext>
       ) : (
         <SelectDirectoryButton />

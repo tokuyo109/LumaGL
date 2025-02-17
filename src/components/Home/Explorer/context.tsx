@@ -1,12 +1,13 @@
 // アプリケーション全体で共有する必要があるロジックや状態を実装する
 import {
   useState,
+  useEffect,
   createContext,
   useContext,
   Dispatch,
   SetStateAction,
 } from 'react';
-import { getAllFromIndexedDB } from './utils';
+import { getAllFromIndexedDB, buildTree } from './utils';
 import { TreeNode } from './types';
 
 type ExplorerProps = {
@@ -19,6 +20,8 @@ type ExplorerContextType = {
   setEntries: (value: Map<string, TreeNode>) => void;
   selectEntries: Map<string, TreeNode>;
   setSelectEntries: Dispatch<SetStateAction<Map<string, TreeNode>>>;
+  root: TreeNode | undefined;
+  setRoot: Dispatch<SetStateAction<TreeNode | undefined>>;
   isSelectEntry: (path: string) => boolean;
   toggleSelectEntry: (node: TreeNode) => void;
   refreshExplorer: () => void;
@@ -38,6 +41,22 @@ export const useExplorerContext = (): ExplorerContextType => {
 };
 
 /**
+ * entriesをアルファベットの昇順に並び替える関数
+ */
+const sortEntries = (entries: Map<string, TreeNode>): Map<string, TreeNode> => {
+  const sortedArray = Array.from(entries.entries()).sort(
+    ([_keyA, a], [_keyB, b]) => {
+      if (a.type === 'directory' && b.type === 'file') return -1;
+      if (a.type === 'file' && b.type === 'directory') return 1;
+
+      return a.name.localeCompare(b.name);
+    },
+  );
+
+  return new Map(sortedArray);
+};
+
+/**
  * プロバイダーコンポーネント
  * これより下に存在するコンポーネントはこのコンテキストの値を利用することができる
  */
@@ -45,7 +64,20 @@ export const ExplorerProvider = ({ children }: ExplorerProps) => {
   const [selectEntries, setSelectEntries] = useState<Map<string, TreeNode>>(
     new Map(),
   );
+  const [root, setRoot] = useState<TreeNode | undefined>(undefined);
   const [entries, setEntries] = useState<Map<string, TreeNode>>(new Map());
+
+  useEffect(() => {
+    (async () => {
+      const entries = await getAllFromIndexedDB();
+      setEntries(entries);
+    })();
+  }, []);
+
+  useEffect(() => {
+    const sortedEntries = sortEntries(entries);
+    setRoot(buildTree(sortedEntries));
+  }, [entries]);
 
   const refreshExplorer = async () => {
     const result = await getAllFromIndexedDB();
@@ -81,6 +113,8 @@ export const ExplorerProvider = ({ children }: ExplorerProps) => {
         setEntries,
         selectEntries,
         setSelectEntries,
+        root,
+        setRoot,
         refreshExplorer,
         isSelectEntry,
         toggleSelectEntry,
