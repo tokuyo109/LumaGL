@@ -1,22 +1,19 @@
 .fileItem {
+  user-select: none;
   list-style: none;
-  padding-left: 0.6rem;
-  border-radius: 4px;
-
-  &:hover {
-    background-color: var(--hoverd-color);
-  }
+  padding-right: 0.5rem;
 }
 
-.label {
-  background: none;
-  border: none;
+.fileItem, .fileItem > * {
+  cursor: pointer;
+}
+
+.fileItem:hover {
+  background-color: var(--hoverd-color) !important;
+}
+
+.labelButton {
   display: flex;
   gap: 4px;
   color: var(--text);
-}
-
-.container {
-  display: flex;
-  gap: 0.25rem;
 }

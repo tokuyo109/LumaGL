@@ -32,10 +32,10 @@ const Home = () => {
         <title>LumaGL - WebGL Editor</title>
       </Helmet>
       <SettingProvider>
-        <SidebarProvider>
-          <WindowProvider>
-            <LogProvider>
-              <ExplorerProvider>
+        <WindowProvider>
+          <LogProvider>
+            <ExplorerProvider>
+              <SidebarProvider>
                 <div className={styles.home}>
                   <header className={styles.header}>
                     <strong className={styles.logo}>
@@ -50,10 +50,10 @@ const Home = () => {
                     </section>
                   </main>
                 </div>
-              </ExplorerProvider>
-            </LogProvider>
-          </WindowProvider>
-        </SidebarProvider>
+              </SidebarProvider>
+            </ExplorerProvider>
+          </LogProvider>
+        </WindowProvider>
       </SettingProvider>
     </>
   );

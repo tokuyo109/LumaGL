@@ -1,7 +1,7 @@
 .textInput {
   width: 100%;
   padding: 0 4px;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   outline-width: 1px;
 }

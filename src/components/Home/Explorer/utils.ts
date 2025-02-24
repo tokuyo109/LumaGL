@@ -219,7 +219,6 @@ export const oidb = async (): Promise<IDBDatabase> => {
 
     // データベース接続成功時の処理
     request.onsuccess = (event: Event) => {
-      console.log('データベースに接続しました');
       const idb:IDBDatabase = (event.target as IDBOpenDBRequest).result;
       resolve(idb);
     };
@@ -260,7 +259,6 @@ export const getRootFromIndexedDB = async (): Promise<Root> => {
         root = cursor.value;
         cursor.continue();
       } else {
-        console.log('ルートディレクトリの取得に成功しました');
         resolve(root);
       }
     };

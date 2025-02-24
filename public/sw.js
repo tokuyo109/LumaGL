@@ -28,7 +28,6 @@ const openIndexedDB = async () => {
     };
 
     request.onsuccess = (event) => {
-      console.log('データベースに接続しました');
       resolve(event.target.result);
     };
 
@@ -68,7 +67,6 @@ const getRootHandle = async () => {
         root = cursor.value;
         cursor.continue();
       } else {
-        console.log('ルートディレクトリの取得に成功しました');
         resolve(root.handle);
       }
     };
@@ -115,14 +113,6 @@ const expandRootHandle = async (dirHandle) => {
 
   return entries;
 };
-
-self.addEventListener('install', (event) => {
-  console.log(event);
-});
-
-self.addEventListener('activate', (event) => {
-  console.log(event);
-});
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);

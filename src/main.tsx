@@ -8,9 +8,7 @@ import './index.css';
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
     .register('/sw.js')
-    .then(() => {
-      console.log('Service Worker登録成功');
-    })
+    .then(() => {})
     .catch((err) => {
       console.error('Service Worker登録失敗', err);
     });

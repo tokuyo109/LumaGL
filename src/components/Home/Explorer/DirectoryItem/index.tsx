@@ -1,154 +1,153 @@
-/**
- * エクスプローラーのフォルダを表現するコンポーネント
- */
-import { useState } from 'react';
+import { useState, ReactNode, ButtonHTMLAttributes } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useExplorerContext } from '../context';
-import { useDirectoryState } from '../hook';
-import { TreeNode } from '../types';
-import styles from './index.module.css';
+import { useContextMenu } from '../ContextMenu/hook';
+import ContextMenu from '../ContextMenu';
+import ContextMenuItem from '../ContextMenu/ContextMenuItem';
+import ContextMenuDivider from '../ContextMenu/ContextMenuDivider';
+import ContextMenuGroup from '../ContextMenu/ContextMenuGroup';
+import TextInput from '../TextInput';
+import { createEntry, removeEntry, renameEntry } from '../utils';
 import {
   VscChevronDown,
   VscChevronRight,
   VscNewFile,
   VscNewFolder,
 } from 'react-icons/vsc';
-import { ButtonHTMLAttributes } from 'react';
-import TextInput from '../TextInput';
-import ContextMenu from '../ContextMenu';
-import ContextMenuItem from '../ContextMenu/ContextMenuItem';
-import ContextMenuDivider from '../ContextMenu/ContextMenuDivider';
-import ContextMenuGroup from '../ContextMenu/ContextMenuGroup';
-import { useContextMenu } from '../ContextMenu/hook';
-
-import { createEntry, removeEntry, renameEntry } from '../utils';
+import { TreeNode } from '../types';
+import styles from './index.module.css';
 
 type Props = {
   node: TreeNode;
-  children?: React.ReactNode;
+  depth: number;
+  children: ReactNode;
+};
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+}
+const EntryButton: React.FC<ButtonProps> = ({ children, ...props }) => {
+  return (
+    <button className={styles.entryButton} {...props}>
+      {children}
+    </button>
+  );
 };
 
 const DirectoryItem = ({ node, children }: Props) => {
   const {
     entries,
-    setSelectEntries,
+    selectedPaths,
+    onSelect,
+    isFocused,
+    openDirectories,
+    openDirectory,
+    toggleDirectory,
     refreshExplorer,
-    isSelectEntry,
-    toggleSelectEntry,
   } = useExplorerContext();
+
   const { position, contextMenuRef, showContextMenu, hideContextMenu } =
     useContextMenu();
 
-  // エントリーを作成中かどうか・エントリーのタイプ
+  const isSelected = selectedPaths.find((path) => node.path === path);
+  const isLast = selectedPaths[selectedPaths.length - 1] === node.path;
+
   const [creatingType, setCreatingType] = useState<'directory' | 'file' | null>(
     null,
   );
 
   const [isRenaming, setIsRenaming] = useState(false);
 
-  // ディレクトリの開閉を管理するState
-  const { openDirectories, toggleDirectory, openDirectory } =
-    useDirectoryState();
+  const { setNodeRef, attributes, listeners } = useDraggable({
+    id: node.path,
+  });
 
-  // ドラッグ用プロパティ
-  const { setNodeRef, attributes, listeners, transform, isDragging } =
-    useDraggable({
-      id: node.path,
-    });
-
-  const style = transform
-    ? `translate(${transform.x}px, ${transform.y}px)`
-    : undefined;
-
-  // ドロップ用プロパティ
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: node.path,
   });
 
-  const ToggleButton = () => {
-    return (
-      <button className={styles.toggleButton}>
-        {openDirectories[node.path] ? <VscChevronDown /> : <VscChevronRight />}
-      </button>
-    );
+  let containerStyle: any = {
+    backgroundColor: isOver ? 'lightblue' : undefined,
   };
 
-  interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    children: React.ReactNode;
-  }
-
-  const EntryButton: React.FC<ButtonProps> = ({ children, ...props }) => {
-    return (
-      <button className={styles.entryButton} {...props}>
-        {children}
-      </button>
-    );
-  };
+  let labelStyle: any = {};
+  labelStyle = isFocused
+    ? {
+        ...labelStyle,
+        backgroundColor: isSelected ? 'var(--hoverd-color)' : 'transparent',
+        outline: isLast ? '1px solid var(--primary)' : 'none',
+      }
+    : {
+        ...labelStyle,
+        backgroundColor: isLast ? 'var(--hoverd-color)' : 'transparent',
+      };
 
   return (
     <>
       <li
         ref={setDroppableRef}
-        style={{
-          backgroundColor: isOver ? 'lightblue' : undefined,
-        }}
         className={styles.directoryItem}
+        style={containerStyle}
       >
         <div
-          // DnD関連
+          className={styles.labelContainer}
+          style={labelStyle}
           ref={setNodeRef}
           {...listeners}
           {...attributes}
-          style={{
-            transform: style,
-            height: 'fit-content',
-            backgroundColor: isSelectEntry(node.path) ? 'gray' : 'transparent',
-            cursor: isDragging ? 'grabbing' : 'grab',
-          }}
-          onClick={(_event: React.MouseEvent) => {
-            toggleSelectEntry(node);
+          onClick={(e) => {
+            onSelect(node, e);
             toggleDirectory(node.path);
           }}
           onContextMenu={showContextMenu}
         >
-          {isRenaming && (
-            <input
-              type="text"
-              autoFocus
-              onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
-                await renameEntry(entries, node, event.target.value);
-                refreshExplorer();
-                setIsRenaming(false);
+          <div className={styles.label}>
+            {openDirectories[node.path] ? (
+              <VscChevronDown />
+            ) : (
+              <VscChevronRight />
+            )}
+            {isRenaming ? (
+              <input
+                type="text"
+                autoFocus
+                defaultValue={node.name}
+                onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
+                  await renameEntry(entries, node, event.target.value);
+                  refreshExplorer();
+                  setIsRenaming(false);
+                }}
+              ></input>
+            ) : (
+              node.name
+            )}
+          </div>
+          <div className={styles.entryButtons}>
+            <EntryButton
+              onClick={(event) => {
+                event.stopPropagation();
+                setCreatingType('file');
+                openDirectory(node.path);
               }}
-            />
-          )}
-          <ToggleButton />
-          <button className={styles.label}>{node.name}</button>
-          <EntryButton
-            onClick={(event) => {
-              event.stopPropagation();
-              setCreatingType('file');
-              openDirectory(node.path);
-            }}
-          >
-            <VscNewFile />
-          </EntryButton>
-          <EntryButton
-            onClick={(event) => {
-              event.stopPropagation();
-              setCreatingType('directory');
-              openDirectory(node.path);
-            }}
-          >
-            <VscNewFolder />
-          </EntryButton>
+            >
+              <VscNewFile />
+            </EntryButton>
+            <EntryButton
+              onClick={(event) => {
+                event.stopPropagation();
+                setCreatingType('directory');
+                openDirectory(node.path);
+              }}
+            >
+              <VscNewFolder />
+            </EntryButton>
+          </div>
         </div>
         <ul>
           {creatingType && (
             <TextInput
               autoFocus
               onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
-                // 空チェックと重複チェックが必要
                 const name = event.target.value;
                 const handle = await createEntry(
                   node.handle as FileSystemDirectoryHandle,
@@ -176,6 +175,7 @@ const DirectoryItem = ({ node, children }: Props) => {
             <ContextMenuItem>
               <button
                 onClick={() => {
+                  hideContextMenu();
                   setIsRenaming(true);
                 }}
               >
