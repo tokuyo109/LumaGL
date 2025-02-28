@@ -27,7 +27,8 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     
-    background-color: var(--menu-background);
+    /* background-color: var(--menu-background); */
+    backdrop-filter: blur(4px);
 
     position: absolute;
     z-index: 999;

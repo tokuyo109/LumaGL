@@ -4,7 +4,8 @@
   z-index: 999;
   
   padding: 4px;
-  background-color: var(--menu-background);
+  /* background-color: var(--menu-background); */
+  backdrop-filter: blur(4px);
   border: 1px solid var(--border);
   border-radius: 4px;
 
