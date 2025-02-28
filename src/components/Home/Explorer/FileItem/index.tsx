@@ -85,7 +85,7 @@ const FileItem = ({ node, depth }: Props) => {
               defaultValue={node.name}
               onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
                 await renameEntry(entries, node, event.target.value);
-                refreshExplorer();
+                await refreshExplorer();
                 setIsRenaming(false);
               }}
             ></input>
@@ -117,7 +117,7 @@ const FileItem = ({ node, depth }: Props) => {
                       parent.handle as FileSystemDirectoryHandle,
                       node.name,
                     );
-                    refreshExplorer();
+                    await refreshExplorer();
                   }
                   hideContextMenu();
                 }}

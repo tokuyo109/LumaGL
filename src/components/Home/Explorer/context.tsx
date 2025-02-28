@@ -40,7 +40,7 @@ type ExplorerContextType = {
   toggleDirectory: (path: string) => void;
   openDirectory: (path: string) => void;
   closeDirectory: (path: string) => void;
-  refreshExplorer: () => void;
+  refreshExplorer: () => Promise<void>;
 };
 
 const ExplorerContext = createContext<ExplorerContextType | undefined>(
@@ -203,7 +203,7 @@ export const ExplorerProvider = ({ children }: ExplorerProps) => {
               node.name,
             );
           }
-          refreshExplorer();
+          await refreshExplorer();
         },
       } as const;
 

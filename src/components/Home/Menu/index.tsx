@@ -61,7 +61,7 @@ const Menu = () => {
 
       console.log('zipファイルのコピーが完了しました');
     }
-    refreshExplorer();
+    await refreshExplorer();
   };
 
   const menus: Node[] = [

@@ -81,7 +81,7 @@ const RootDirectoryItem = ({ node, children }: Props) => {
               );
               if (handle) {
                 setCreatingType(null);
-                refreshExplorer();
+                await refreshExplorer();
               }
             }}
             placeholder={

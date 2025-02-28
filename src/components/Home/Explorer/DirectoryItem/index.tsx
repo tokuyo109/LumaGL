@@ -114,7 +114,6 @@ const DirectoryItem = ({ node, children }: Props) => {
                 defaultValue={node.name}
                 onBlur={async (event: React.FocusEvent<HTMLInputElement>) => {
                   await renameEntry(entries, node, event.target.value);
-                  refreshExplorer();
                   setIsRenaming(false);
                 }}
               ></input>
@@ -156,7 +155,7 @@ const DirectoryItem = ({ node, children }: Props) => {
                 );
                 if (handle) {
                   setCreatingType(null);
-                  refreshExplorer();
+                  await refreshExplorer();
                 }
               }}
               placeholder={
@@ -192,7 +191,7 @@ const DirectoryItem = ({ node, children }: Props) => {
                       parent.handle as FileSystemDirectoryHandle,
                       node.name,
                     );
-                    refreshExplorer();
+                    await refreshExplorer();
                   }
                   hideContextMenu();
                 }}

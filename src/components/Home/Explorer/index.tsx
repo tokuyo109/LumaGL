@@ -93,7 +93,7 @@ const Explorer = () => {
       if (!selectedNode) return;
       await moveEntry(entries, selectedNode, overNode);
     }
-    refreshExplorer();
+    await refreshExplorer();
   };
 
   useEffect(() => {
