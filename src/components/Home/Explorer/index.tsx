@@ -60,11 +60,12 @@ const Explorer = () => {
     refreshExplorer,
   } = useExplorerContext();
 
+  // 5px以上でドラッグ判定
   const sensors = useSensors(
-    // 5px以上でドラッグ判定
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
   );
 
+  /** ディレクトリを選択し画面を更新する */
   const handlePickDirectory = async () => {
     const dirHandle = await selectDirectory();
     if (!dirHandle) return;
@@ -73,13 +74,13 @@ const Explorer = () => {
     updateEntreis && setEntries(updateEntreis);
   };
 
+  /** ドラッグ終了時にエントリーを移動する */
   const handleDragEnd = async (event: DragEndEvent) => {
     const { over } = event;
-    if (!over) return;
-    // ドロップ要素のノードを取得
-    const overNode = entries.get(`${over.id}`);
+    const overNode = entries.get(`${over?.id}`);
     if (!overNode) return;
-    // 移動エントリーがドロップ先ディレクトリと一致する場合エラー
+
+    // 選択されているエントリーがドロップ先に含まれている場合エラー
     for (const selectedPath of selectedPaths) {
       if (overNode.path === selectedPath) {
         throw new Error(
@@ -87,6 +88,7 @@ const Explorer = () => {
         );
       }
     }
+
     // エントリーを移動させる
     for (const selectedPath of selectedPaths) {
       const selectedNode = entries.get(selectedPath);

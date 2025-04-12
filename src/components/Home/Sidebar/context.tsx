@@ -7,7 +7,6 @@ import {
   Dispatch,
   SetStateAction,
 } from 'react';
-import { useExplorerContext } from '../Explorer/context';
 
 type SidebarProps = {
   children?: ReactNode;

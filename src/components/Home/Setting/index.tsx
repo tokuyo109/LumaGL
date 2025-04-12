@@ -10,7 +10,7 @@ const getSystemTheme = () => {
 };
 
 const Setting = () => {
-  const { theme, setTheme, isAmbient, setIsAmbient } = useSettingContext();
+  const { theme, setTheme } = useSettingContext();
 
   useEffect(() => {
     const appliedTheme = theme === 'os' ? getSystemTheme() : theme;

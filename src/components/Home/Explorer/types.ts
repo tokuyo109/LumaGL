@@ -1,22 +1,16 @@
-export type EntryNode = {
-  id: string;
-  name: string;
-  kind: 'directory' | 'file';
-  handle: FileSystemHandle;
-  // children?: Node[]; // React childrenと被るため変更
-  childNodes?: EntryNode[];
-};
-
 export type Handle = FileSystemFileHandle | FileSystemDirectoryHandle;
 
 export type Entry = {
-  path: string; // エントリーパス
-  parentPath: string; // 親エントリーパス
-  name: string; // エントリー名
-  type: 'directory' | 'file'; // エントリータイプ
+  path: string;
+  parentPath: string;
+  name: string;
+  type: 'directory' | 'file';
   handle: Handle;
 };
 
 export type TreeNode = Entry & { children: TreeNode[] };
 
-export type Root = { path: string;handle: FileSystemDirectoryHandle } | undefined;
+export type Root = {
+  path: string;
+  handle: FileSystemDirectoryHandle
+} | undefined;
